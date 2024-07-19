@@ -1,0 +1,14 @@
+This is, to me, complex things that I tried to solve when building this project
+
+1. How to build a system where user when requesting for random quote everyday, they got their own set of random quote (not the same quotes sequence as others)
+
+2. How to build a system so that the get random quote functionality invoked when user click on 
+(get another quote button), it will fetch another quote to the UI.
+    Either:Fetch each quote everytime user click onto the button?
+    Or: Should I save 100 random quotes onto client memory? After all 100 quotes is scrolled, I'll make another request to get another 100 randomly?
+
+3. How to write code so that in every hour cronjob is running, it's getting send to user with the specified (auto detect timezone) Or manually updated timezone
+(this one is a rabbit hole in itself. So, before you do anything, research is a must)
+(But this one worth alot of points, and you can save 1 way to handle this one and for all)
+<=> I give up
+

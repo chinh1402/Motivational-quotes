@@ -1,0 +1,50 @@
+1. I didn't specify the data type when using postman (cant send using text)
+2. I downloaded node packages outside of the folders
+3. Outdated information cause chatgpt. Logout now need a callback (which need to be fed from documentation)
+4. code: 'EAI_AGAIN', read /backend/onlyuseonce/fetchQuote.js; Solution: use VPN
+5. route.js:216
+        throw new Error(msg);
+        ^
+
+Error: Route.post() requires a callback function but got a [object Undefined]  
+
+I commented the API controller, but I didn't commented the route.
+
+6. Problems about .random: The program will be slower the more items it gotta sorted out (random can hit the very value that was used, and it kept on doing that)
+
+7. Type of Quotes and Type of UsedQuotes aren't compatible to override
+
+8. Error fetching quotes: MongooseError: Operation `quotes.insertMany()` buffering timed out after 10000ms
+=> Didn't connected to database
+
+9. Invalid login: 535-5.7.8 Username and Password not accepted.
+
+Sof post: 
+https://stackoverflow.com/questions/59188483/error-invalid-login-535-5-7-8-username-and-password-not-accepted
+
+Google disabled less secure apps now so you need to setup Login with app password In summary you must setup your access with two factor authentication in order to allow the app password
+
+transport: {
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'contact@gmail.com',
+    pass: 'app password',
+  },
+},
+
+And no, even with unidentified email, you can still send the email
+
+Ofcourse, only the users signed up (in quote sequence) can use the services
+
+10. Giving alias to email name:
+...
+const mailOptions = {
+    from: `Motivation Quote <${process.env.ADMIN_EMAIL}>`,
+    to,
+    subject,
+    text
+  };
+...
+

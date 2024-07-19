@@ -1,0 +1,159 @@
+1. Writing signup / login / logout APIS
+~ Optional: 2FA
+<> Check if actually session is being saved, and how to use it on client side
+==> Partly done.
+
+2. Add 2127 motivational quotes onto mongoDB (cause of the api only have 2127 quotes)
+=> Done
+
+3. Rewrite quote model 
+=> done
+
+4. Dissecting the problem: where user when requesting for random quote everyday, they got their own set of random quote (not the same quotes sequence as others)
+Solution:
+- Create a new schema that save a pattern for their own random codes.
+
+Day 1 => index 0
+Day 2 => index 1
+...
+
+plotted day array
+current index
+current Day
+
+- Create a code that return an array of sequence so that to be saved in db
+=> done
+
+- Handling inputting into mongoDB using the new schema
+// when do people use the array of sequence? When they need a random sequence of quotes
+// Why do they need a random sequence of quotes? Cause they signed up for the random quote email for the day.
+=> build an emailSubscribedRandom API (the daily quote should be called: daily emailSubscribedDaily, which
+has it own set of data)
+
+Build API:
+
+When invoked: User Click on Subcribe for daily email button (with an option)
+Data expected to be sent from frontend?
+=> 2 fields:
+useremail (Type: String)
+options (Object, for scalability. Cause maybe a specific tag for quotes)
+
+// All of those doesn't use query use request body
+User APIS:
+http://localhost:3000/api/auth/signup
+http://localhost:3000/api/auth/login
+http://localhost:3000/api/auth/logout
+
+http://localhost:3000/api/auth/google
+http://localhost:3000/api/auth/google/callback
+
+http://localhost:3000/api/quotes/email-subscribed-random
+http://localhost:3000/api/quotes/email-subscribed-daily
+http://localhost:3000/api/quotes/email-unsubscribed
+http://localhost:3000/api/quotes/get-random-quote
+
+Admin APIS:
+http://localhost:3000/api/admin/quote?quoteNumberId=12
+http://localhost:3000/api/admin/quotes?page=2&limit=20
+http://localhost:3000/api/admin/addQuote
+http://localhost:3000/api/admin/updateQuote
+http://localhost:3000/api/admin/deleteQuote
+
+http://localhost:3000/api/admin/quoteSequences?page=1&limit=20
+http://localhost:3000/api/admin/addQuoteSequence
+http://localhost:3000/api/admin/deleteQuoteSequence
+
+http://localhost:3000/api/admin/users?email=ndch
+http://localhost:3000/api/admin/deleteQuoteSequence
+
+
+
+
+
+
+
+
+What will expected to be in the API?
+- emailSubscribedRandom API functionality:
+Purpose: Create a specific quoteSequence for a specific userId
+Checklist:
+- Validate inputs
+- Check user existance in database
+- Generate Quote sequence
+- Save Subscription Details
+- Send Confirmation Response
+
+=> Done
+
+- emailSubscribedDaily API should be the same thing, except passing in a fixed sequence value
+=> Done
+
+Secure the email api using dotenv
+=> Done
+
+- emailUnsubscribed API
+=> Done
+
+- get-random-quote API, you can pass in a count in its query
+=> Done
+
+5. Setting up daily emails
+=> Done, when program is running, by 5AM every morning GMT+7, email is expected to be sent
+
+optional, but important: Configure the timezones for each individual user
+optional 2: translate quote into their own specified language (infeasible)
+
+6. Add an admin dashboard for monitoring site activities. Also add basic CRUD
+- How to log in as an admin?
+Idea: Only admin with specified google account can login as admin
+-> Configure passport google sign up
+
+Followed this tutorial: https://www.youtube.com/watch?v=tgO_ADSvY1I
+==> GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET on .env
+
+API callback path: http://localhost:3000/api/auth/google/callback
+
+Instructions flow:
+.0: In your mongoDB schema must have `googleId: String`
+.1: Configuring passportConfig.js file to use `new GoogleStrategy`
+.2: Write get method routing for 2 paths: api/auth/google, api/auth/google/callback
+.3: Write controller for them
+
+// Still, I don't know how to use these...
+
+To create an account, just redirect user to http://localhost/api/auth/google, I dont know how the rest work ;>
+
+After they sign in using google, they automatically login.
+...
+
+So, for the admin CRUD, I have to do 2 things
+1. Ensure that it get redirected to the right path
+2. Protect the path from outsider
+=> Done
+
+-> (Frontend): Check for session. Only session comes from admin email can do CRUD on all things
+(use middleware)
+
+- What api expected to be used?
+Basic CRUD on quotes, quoteSequence, users.
+
+
+- Since there's no user oriented activities, there's no point in having site activities... So I'm gonna
+stick to basic CRUD
+
+=> Done
+
+=======================================
+0. If you decide to do these, Admin dashboard should also have a category to handle these aswell
+7. Fetch quotes using specific day (Optional) 
+8. Find quote in database by category, author name, content (Optional)
+9. Refactor User schema, configure profile pages... (Optional) 
+10. Save, heart, remove, report, share personal gallery (Optional)
+11. Make a special category that user can CRUD their quotes (Optional, Security)
+12. Custom quote sending through email option (Optional)
+13. Quotes leaderboard (Optional)
+
+xx. Set up DNS to servers worldwide
+========================================
+
+Frontend:

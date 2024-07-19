@@ -1,0 +1,1 @@
+1. There's an extra call on quoteSequence.. Dunno how to optimise that
