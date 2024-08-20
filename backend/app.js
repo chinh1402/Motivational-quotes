@@ -11,8 +11,8 @@ require('./config/passportConfig');
 // Db innit
 require('./db/db');
 
-const authRoutes = require('./routes/authRoutes');
-const quoteRoutes = require('./routes/quoteRoutes');
+const unregisteredRoutes = require('./routes/unauthenticatedRoutes');
+const authenticatedRoutes = require('./routes/authenticatedRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { ensureAuthenticated, ensureAdmin } = require('./middlewares/authMiddleware');
 
@@ -28,8 +28,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-app.use('/api/auth', ensureAuthenticated, authRoutes);
-app.use('/api/quotes', ensureAuthenticated, quoteRoutes);
-app.use('/api/admin', ensureAuthenticated, ensureAdmin, adminRoutes);
+app.use('/api', unregisteredRoutes);
+app.use('/api/authenticated', ensureAuthenticated, authenticatedRoutes);
+// app.use('/api/admin', ensureAuthenticated, ensureAdmin, adminRoutes);
+app.use('/api/admin', adminRoutes);
 
 module.exports = app;

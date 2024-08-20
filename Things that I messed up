@@ -1,4 +1,4 @@
-1. I didn't specify the data type when using postman (cant send using text)
+1. I didn't specify the data type when using postman (cant send using text, must be JSON)
 2. I downloaded node packages outside of the folders
 3. Outdated information cause chatgpt. Logout now need a callback (which need to be fed from documentation)
 4. code: 'EAI_AGAIN', read /backend/onlyuseonce/fetchQuote.js; Solution: use VPN
@@ -13,6 +13,7 @@ I commented the API controller, but I didn't commented the route.
 6. Problems about .random: The program will be slower the more items it gotta sorted out (random can hit the very value that was used, and it kept on doing that)
 
 7. Type of Quotes and Type of UsedQuotes aren't compatible to override
+=> Made a workaround by re-making the models
 
 8. Error fetching quotes: MongooseError: Operation `quotes.insertMany()` buffering timed out after 10000ms
 => Didn't connected to database
@@ -47,4 +48,17 @@ const mailOptions = {
     text
   };
 ...
+
+11. Giving wrong object field name when sending postman POST request
+- loginusernameoremail 
+- loginUsernameOrEmail
+Are two different things
+
+12. Cant add object directly into a schema. You gotta make a new schema then require it in another schema
+
+13. Can you compare query, body, param?
+
+14. For some reason, you gotta cd to /utils/onlyuseonce to access .env... when running fetchQuotev2. dunno why
+
+
 

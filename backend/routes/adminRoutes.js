@@ -9,15 +9,18 @@ router.put("/updateQuote", adminController.updateQuote);
 router.delete("/deleteQuote", adminController.deleteQuote);
 
 router.get("/quoteSequences", adminController.getQuoteSequences);
-router.post("/addQuoteSequence", adminController.createQuoteSequence);
+router.post("/createQuoteSequence", adminController.createQuoteSequence);
+router.put("/updateQuoteSequence", adminController.updateQuoteSequence);
 router.delete("/deleteQuoteSequence", adminController.deleteQuoteSequence);
 
-// No need to update quote Sequences because it is not necessary. There's no info to change except for userEmail.. 
-// But you can just delete the sequence anyway, since it doesn't really matter. 
-// If random then there's no point. If daily then there's fixed value anyway
-
 router.get("/users", adminController.getUsers);
-router.delete("/deleteuser", adminController.deleteQuoteSequence);
+router.post("/addUser", adminController.createUser);
+router.put("/updateUser", adminController.updateUsers);
+router.delete("/deleteUser", adminController.deleteUser);
 
-// no need to add, update user data
+router.get("/tags", adminController.getTags); 
+router.post("/addTag", adminController.createTag); 
+router.put("/updateTag", adminController.updateTag); 
+router.delete("/deleteTag", adminController.deleteTag); 
+
 module.exports = router;

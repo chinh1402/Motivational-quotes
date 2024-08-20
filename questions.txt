@@ -1,0 +1,1 @@
+For quote Favorite task, if I put singular id, would it be more drained compared to a list of id (string, seperate by comma)

@@ -30,3 +30,4 @@ const sendEmail = (to, subject, text) => {
 };
 
 module.exports = sendEmail;
+

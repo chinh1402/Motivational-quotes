@@ -39,37 +39,6 @@ useremail (Type: String)
 options (Object, for scalability. Cause maybe a specific tag for quotes)
 
 // All of those doesn't use query use request body
-User APIS:
-http://localhost:3000/api/auth/signup
-http://localhost:3000/api/auth/login
-http://localhost:3000/api/auth/logout
-
-http://localhost:3000/api/auth/google
-http://localhost:3000/api/auth/google/callback
-
-http://localhost:3000/api/quotes/email-subscribed-random
-http://localhost:3000/api/quotes/email-subscribed-daily
-http://localhost:3000/api/quotes/email-unsubscribed
-http://localhost:3000/api/quotes/get-random-quote
-
-Admin APIS:
-http://localhost:3000/api/admin/quote?quoteNumberId=12
-http://localhost:3000/api/admin/quotes?page=2&limit=20
-http://localhost:3000/api/admin/addQuote
-http://localhost:3000/api/admin/updateQuote
-http://localhost:3000/api/admin/deleteQuote
-
-http://localhost:3000/api/admin/quoteSequences?page=1&limit=20
-http://localhost:3000/api/admin/addQuoteSequence
-http://localhost:3000/api/admin/deleteQuoteSequence
-
-http://localhost:3000/api/admin/users?email=ndch
-http://localhost:3000/api/admin/deleteQuoteSequence
-
-
-
-
-
 
 
 
@@ -111,17 +80,17 @@ Idea: Only admin with specified google account can login as admin
 Followed this tutorial: https://www.youtube.com/watch?v=tgO_ADSvY1I
 ==> GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET on .env
 
-API callback path: http://localhost:3000/api/auth/google/callback
+API callback path: http://localhost:3000/api/google/callback
 
 Instructions flow:
 .0: In your mongoDB schema must have `googleId: String`
 .1: Configuring passportConfig.js file to use `new GoogleStrategy`
-.2: Write get method routing for 2 paths: api/auth/google, api/auth/google/callback
+.2: Write get method routing for 2 paths: api/google, api/google/callback
 .3: Write controller for them
 
 // Still, I don't know how to use these...
 
-To create an account, just redirect user to http://localhost/api/auth/google, I dont know how the rest work ;>
+To create an account, just redirect user to http://localhost/api/google, I dont know how the rest work ;>
 
 After they sign in using google, they automatically login.
 ...
@@ -143,6 +112,14 @@ stick to basic CRUD
 
 => Done
 
+7. Write a Tag schema, think of how can it interact with all others?
+7.01. Update QuoteSequence, give it tags.
+8. Write updateQuoteSequence APIS
+9. Write startsending days and stop sending day logic, schema, codes flow,...
+10. Adding Timezone, country onto user schema, and their other creds, like profile pic,...
+11. Create a supportTicket schema
+
+
 =======================================
 0. If you decide to do these, Admin dashboard should also have a category to handle these aswell
 7. Fetch quotes using specific day (Optional) 
@@ -153,7 +130,92 @@ stick to basic CRUD
 12. Custom quote sending through email option (Optional)
 13. Quotes leaderboard (Optional)
 
+o. Writing an embedded javascript
+x. Set up timezones for specific country
 xx. Set up DNS to servers worldwide
+xxx. Make an AI that listen to others suggestions, then give quotes base on their suggestions! It also help with signing up daily quotes.
+xxxx. Also an AI use the quote and generate a motivation pic just like on pinterest
+xxxxx. Contribution for language...
 ========================================
+-1. Make a new All available quotes for authenticated users
+
+
 
 Frontend:
+0. Remember to make a Thank you notification after they have subscribed!!
+1. Find a design to fit your niche. Or Steal a design!!
+2. Since you don't find a good fit for your design, design one yourself. 
+Draw an userflow of what users can do before than, then prioritizes what you want users to do
+Figma: Finally finished designing, with a prototype
+
+...
+
+7/8/2024
+
+You have re-written quote.js, quoteSequence.js, user.js; adding tag.js and language.js for scalability. So:
+1. Rewrite logic for ALL admin apis.
+2. Adding API for Tags CRUD
+3. Base on UI, think of more stuff to do...
+
+8/8/2024
+Backend
+1. Only logout api need to be written in unregistered api pack
+(nvm, it it already written). Check with logging req.isAuthenticated()
+2. Make some changes for login/sign in base on new schema (done) 
+3. Rewrite your CRUD apis
+// needed testing: Get quoteSequence
+Code is expected to support multiple query options at once, but the UI only does singular
+
+4. I put every tag as ObjectID for scalability. Wish me luck!
+=> Quote, QuoteSequence, tags
+4.1. I deleted current Quote, tags. And re-fetch them. Now we have Quotes, Tags schemas database => objectID for tags are available
+4.3. Test quotes, quoteSequence, User, Tags APIs
+4.3.1. When adding / deleting quotes, adding / deleting from tags schema correspondingly
+4.3.2. For quoteSequence, when creating, you add +1 tagSequence onto tags. You deleted with the same process. Users can't update the tags. So you dont have to do anything about
+changing tags.
+
+4.3.3. Rewrite user.js schema with required fields. and rewrite the admin controller.. And retest them
+
+
+17/8
+forgotthenumber. Design tags page (step 2 in step by step email sign up) -> done
+
+List out all of the APIs you need to build based on UI
+
+Unauthenticated
+
+GetQuoteList API (For daily email on site, and for quoteGallery; and also to see possible quotes, get all related data for possible quotes)
+GetQuoteListRandom API (For random quotes)
+
+===> Done
+I incorporated 2 APIs into 1 for reducing the API redundant purposes... Now we only have GetQuoteList API, and add random query params
+
+
+Authenticated
+
+EmailServiceSignup API 
+(Remind yourself to build some Email sending templates)
+
+
+ToggleEmailService API (pausing / continue services) x
+
+handleQuoteFavorite API x
+GetFavoriteQuotes API x
+ChangePasswordRequest API x
+DeleteUserRequest API x
+
+
+GetAccountDetails API x
+UpdateAccountRequest API x
+UpdateAccountRequestConfirmed API x
+
+
+
+1. Build a macro on the frontend that does calculate the lastSendingDay based on the number of quotes available. 
+2. Adding when deleting users, delete the quote fav count for it.
+
+
+3. Adding userConsent field in quoteSequence. Due to the fact that onhalt can be changed if they press the continue the service. The 
+Email re-confirm was a mandatory act.
+
+4. Make a screen to show that email is sent. After it is confirmed, show modal.

@@ -1,0 +1,34 @@
+There are 3 sequence types:
+1. Random - default
+2. daily
+3. custom (I don't know what custom could be yet, but soon enough.)
+
+Object ID contains: created time, machine id, process id, auto increasement option
+
+Why I use Increase ID on Quote but not on others?
+When generating quote sequence, it will store a sequence of quotes. At most the whole database of quotes. (2128 quotes).
+If I were decided to store using objectID, it would be horribly heavy (I think)
+
+Why tags don't have increase ID?
+One quote can have max 5 tags. Storing as ObjectID is fine
+
+Why creating language schema?
+You cant store object inside an object, so you created a schema, then inherit the new schema in an old schema 
+
+Does session kept when program is down
+No. Session gonna dropped
+
+Why did I decided to give 1 user only 1 email?
+Cause it serves as Identity. And if there are multiple emails, what happen if the sub-email get signed up? Where do you login to? Main email account?
+
+
+Creating admin sequence using this query:
+{
+    "email": "process.env.ADMIN_EMAIL",
+    "sequenceType": "random",
+    "tags": "Motivational, Success, Wisdom",
+    "timezone": "UTC",
+    "startSendingDay":"2024-08-15",
+    "lastSendingDay": "2024-11-30",
+    "sendAt": "05:00"
+}

@@ -1,6 +1,8 @@
 const User = require("../models/user");
 const { body, validationResult } = require("express-validator");
 const passport = require("passport");
+const Quote = require("../models/quote");
+const Tag = require("../models/tag");
 require("dotenv").config();
 
 exports.signup = [
@@ -45,7 +47,14 @@ exports.signup = [
       }
 
       // Create a new user instance
-      const newUser = new User({ username, password, email });
+      const newUser = new User({
+        username,
+        password,
+        email,
+        timezone: "UTC", // Default timezone
+        role: 0,
+        agreedtoTOSandPrivacyPolicy: false,
+      });
 
       // Await for save operation to complete
       await newUser.save();
@@ -78,33 +87,105 @@ exports.login = (req, res, next) => {
   })(req, res, next);
 };
 
-exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
+exports.googleAuth = passport.authenticate("google", {
+  scope: ["profile", "email"],
+});
 
 exports.googleAuthCallback = (req, res, next) => {
-  passport.authenticate('google', { failureRedirect: '/login' }, (err, user, info) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-    if (!user) {
-      return res.redirect('/login');
-    }
-    req.logIn(user, (err) => {
+  passport.authenticate(
+    "google",
+    { failureRedirect: "/login" },
+    (err, user, info) => {
       if (err) {
+        console.log(err);
         return res.status(500).json({ error: "Internal server error" });
       }
-      if (user.email === process.env.ADMIN_EMAIL) {
-        return res.redirect('/admin');
+      if (!user) {
+        return res.redirect("/login");
       }
-      return res.redirect('/');
-    });
-  })(req, res, next);
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Internal server error" });
+        }
+        if (user.emailSignin === process.env.ADMIN_EMAIL) {
+          return res.redirect("/admin");
+        }
+        return res.redirect("/");
+      });
+    }
+  )(req, res, next);
 };
 
 exports.logout = (req, res) => {
   req.logout(req.user, (err) => {
     if (err) return next(err);
     res.status(200).json({ message: "Logout successful, redirecting..." });
-    // res.redirect('/');
+    res.redirect("/");
   });
+};
+
+exports.getQuoteList = async (req, res) => {
+  let {
+    page = 1,
+    limit = 20,
+    content,
+    author,
+    quoteNumberId,
+    tags,
+    random,
+  } = req.query;
+  try {
+    // Construct the search query
+    let searchQuery = {};
+    if (content) {
+      searchQuery.content = { $regex: content, $options: "i" }; // Case-insensitive search
+    }
+    if (author) {
+      searchQuery.author = { $regex: author, $options: "i" }; // Case-insensitive search
+    }
+    if (quoteNumberId) {
+      searchQuery.quoteNumberId = quoteNumberId; // Exact match for quoteNumberId
+    }
+
+    if (random) {
+      tags = "Inspirational, Life, Change, Future, Happiness";
+    }
+
+    if (tags) {
+      const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
+      const tagObjects = await Tag.find({ name: { $in: tagsArray } });
+      const tagObjects_ids = tagObjects.map((tag) => tag._id);
+    
+      searchQuery.tags = random ? { $in: tagObjects_ids } : { $all: tagObjects };
+    }
+
+    const quotes = random
+      ? await Quote.aggregate([
+          { $match: searchQuery },
+          { $sample: { size: 100 } },
+        ])
+      : await Quote.find(searchQuery)
+          .skip((page - 1) * limit)
+          .limit(limit);
+
+    // Get the total number of quotes matching the search query to calculate total pages
+    const totalQuotes = await Quote.countDocuments(searchQuery);
+
+    // Calculate total number of pages
+    const totalPages = Math.ceil(totalQuotes / limit);
+
+    // Send response with pagination details
+    res.json({
+      quotes,
+      pagination: {
+        totalQuotes,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Error fetching quotes" });
+  }
 };

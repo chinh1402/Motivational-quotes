@@ -12,3 +12,10 @@ This is, to me, complex things that I tried to solve when building this project
 (But this one worth alot of points, and you can save 1 way to handle this one and for all)
 <=> I give up
 
+4. How to handle email confirmation?
+=> 4.1. User send their data using forms
+   4.2. Data is saved in database, there will be an onHalt boolean that's set to false (not sending email service yet). For current context, redirect to home
+   4.3. User click the confirm button in email
+   4.4. Button redirected user to homepage, then update onhalt boolean to true
+
+==> 3 APIS: Send email - create quoteSequence - Toggle onHalt 

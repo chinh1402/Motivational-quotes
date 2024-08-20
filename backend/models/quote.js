@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const languageSchema = require("./language")
 
 const quoteSchema = new mongoose.Schema({
   quoteNumberId: {
@@ -14,7 +15,7 @@ const quoteSchema = new mongoose.Schema({
     required: true,
   },
   tags: {
-    type: [String],
+    type: [mongoose.Schema.Types.ObjectId],
     default: [],
   },
   authorSlug: {
@@ -25,14 +26,33 @@ const quoteSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  dateAdded: {
+  favorites: {
+    type: Number,
+    default: 0
+  },
+  language: {
+    type: [languageSchema],
+    required: true,
+    default: []
+  },
+  createdAt: {
     type: Date,
     default: Date.now,
+    required: true
   },
-  dateModified: {
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId, 
+    required: true
+  },
+  updatedAt: {
     type: Date,
     default: Date.now,
+    required: true
   },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  }
 });
 
 

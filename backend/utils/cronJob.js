@@ -2,20 +2,18 @@ const cron = require("node-cron");
 const Quote = require("../models/quote");
 const quoteSequence = require("../models/quoteSequence");
 const sendEmail = require("../services/emailService");
-const database = require("../db/db");
 require("dotenv").config();
 
 // By default, 5AM GMT+7, server will send email to everyone who signed up
 cron.schedule('0 5 * * *', async () => {
-  console.log("This cron run at 10:45AM GMT+7");
+  console.log("This cron run at 5AM GMT+7");
   const quoteSequencesList = await quoteSequence.find();
   quoteSequencesList.forEach(async (quoteSequencesitem) => {
     let userEmail = quoteSequencesitem.userEmail;
     let quoteDay = quoteSequencesitem.currentDay;
-    let quoteIndex = quoteSequencesitem.currentIndex;
     let quoteSequenceArr = quoteSequencesitem.quoteSequence;
 
-    let quoteNumberId = quoteSequenceArr[quoteIndex];
+    let quoteNumberId = quoteSequenceArr[currentDay-1];
     let quote = await Quote.find({ quoteNumberId: quoteNumberId });
 
     sendEmail(

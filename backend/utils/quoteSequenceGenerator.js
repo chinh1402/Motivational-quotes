@@ -1,9 +1,4 @@
-// Generating a shuffled sequence array based on a given count
-
-function createSequenceArray(count) {
-  return Array.from({ length: count }, (_, i) => i + 1);
-}
-
+// Function to shuffle an array
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -12,14 +7,13 @@ function shuffleArray(array) {
   return array;
 }
 
-function generateShuffledSequence(quoteslength) {
+// Function to generate a shuffled sequence from a given array
+function generateShuffledSequence(quotesArray) {
   try {
-    const sequenceArray = createSequenceArray(quoteslength);
-    const shuffledSequence = shuffleArray(sequenceArray);
+    const shuffledSequence = shuffleArray([...quotesArray]); // Clone the array before shuffling
     return shuffledSequence;
   } catch (error) {
     console.error('Error generating shuffled sequence:', error.name, error.message);
   }
 }
-
 module.exports = generateShuffledSequence;

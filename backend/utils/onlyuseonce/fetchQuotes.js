@@ -6,7 +6,9 @@ const axios = require('axios');
 const mongoose = require('mongoose');
 require('../../db/db');
 
+// Old schema where tags is an array of String
 const Quote = require("../../models/quote");
+
 async function fetchQuotes() {
   try {
     let page = 1;

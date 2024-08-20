@@ -1,0 +1,225 @@
+Unauthenicate
+POST
+http://localhost:3000/api/signup x
+{
+    "username": "chigsignup",
+    "email": "randomemaillmao@gmail.com",
+    "password": "@Aa12345"
+}
+
+POST
+http://localhost:3000/api/login x
+{
+    "loginusernameoremail": "chigsignup",
+    "password": "@Aa12345"
+}
+
+http://localhost:3000/api/logout
+http://localhost:3000/api/google
+http://localhost:3000/api/google/callback
+
+GET
+http://localhost:3000/api/getQuoteList?page=1&limit=20&tags=Wisdom,Philosophy x
+http://localhost:3000/api/getQuoteList?random=true x
+
+Authenticated
+http://localhost:3000/api/quotes/email-subscribed-random
+http://localhost:3000/api/quotes/email-subscribed-daily
+http://localhost:3000/api/quotes/email-unsubscribed
+
+
+GET
+http://localhost:3000/api/authenticated/getAccountDetails x
+
+POST
+http://localhost:3000/api/authenticated/updateAccountRequest x
+{
+    "phone": "03682147822",
+    "firstName": "China"
+}
+
+POST
+http://localhost:3000/api/authenticated/updateAccountRequestConfirmed x
+
+POST
+http://localhost:3000/api/authenticated/handleQuoteFavorite x
+{
+    "quoteNumberId": "1",
+    "favorite": true
+}
+
+{
+    "quoteNumberId": "1",
+    "favorite": false
+}
+
+GET
+http://localhost:3000/api/authenticated/getFavoriteQuotes x
+
+
+// what do we test for this?
+1. wrong old password
+2. wrong format right password
+POST
+http://localhost:3000/api/authenticated/changePasswordRequest x
+{
+    "oldPassword": "@Aa12345",
+    "newPassword": "@Bb123456"
+}
+
+POST
+http://localhost:3000/api/authenticated/changePasswordConfirmed x
+
+DELETE
+http://localhost:3000/api/authenticated/deleteSelfFromUser x
+
+POST
+http://localhost:3000/api/authenticated/toggleEmailService x
+
+
+What am gonna test for this?
+- 2 SequenceTypes daily and random (Just that)
+
+POST
+http://localhost:3000/api/authenticated/emailServiceSignup x
+{
+    "email": "testacc1@gmail.com",
+    "sequenceType": "daily",
+    "timezone": "UTC",
+    "startSendingDay":"2024-08-15",
+    "lastSendingDay": "2024-08-16",
+    "sendAt": "05:00"
+}
+
+{
+    "email": "testacc1@gmail.com",
+    "sequenceType": "random",
+    "tags": "Success",
+    "timezone": "UTC",
+    "startSendingDay":"2024-08-15",
+    "lastSendingDay": "2024-08-16",
+    "sendAt": "05:00"
+}
+
+POST
+http://localhost:3000/api/authenticated/emailServiceSignupConfirmed x
+
+DELETE
+http://localhost:3000/api/authenticated/emailUnsubscribe x
+
+Admin APIS:
+QUOTE
+
+GET
+http://localhost:3000/api/admin/quotes?page=1&limit=20&tags=Wisdom,Philosophy x
+
+POST
+http://localhost:3000/api/admin/addQuote x
+{
+ "author": "Logan Paul",
+ "content": "booyah",
+ "tags": "Success, Work"   
+}
+
+PUT
+http://localhost:3000/api/admin/updateQuote x
+{
+ "quoteNumberId": 2129,
+ "author": "Logan Paul",
+ "content": "landlord",
+ "tags": "Success"   
+}
+
+DELETE
+http://localhost:3000/api/admin/deleteQuote x
+{
+    "quoteNumberId": 2129
+}
+
+QUOTESEQUENCE
+
+GET
+http://localhost:3000/api/admin/quoteSequences?page=1&limit=20 x
+
+POST
+http://localhost:3000/api/admin/createQuoteSequence x
+{
+    "email": "chig@lmao.com",
+    "sequenceType": "random",
+    "tags": "Wisdom, Philosophy",
+    "timezone": "UTC",
+    "startSendingDay":"2024-08-15",
+    "lastSendingDay": "2024-08-16",
+    "sendAt": "05:00"
+}
+
+PUT
+http://localhost:3000/api/admin/updateQuoteSequence x
+{
+    "_id": "66bff02d7b060aa0c01fd3f1",
+    "email": "randomemaillmao@gmail.com",
+    "sequenceType": "random",
+    "timezone": "UTC",
+    "startSendingDay":"2024-08-15",
+    "lastSendingDay": "2024-08-18",
+    "sendAt": "05:00",
+    "onHalt": "false"
+}
+
+DELETE
+http://localhost:3000/api/admin/deleteQuoteSequence x
+{
+    "_id": "66bff02d7b060aa0c01fd3f1"
+}
+
+USER
+
+http://localhost:3000/api/admin/users?email=ndch x
+
+POST
+http://localhost:3000/api/admin/addUser x
+{
+    "username": "omahhard",
+    "email": "ismelting+fb@gmail.com"
+}
+
+Sample _id
+
+PUT
+http://localhost:3000/api/admin/updateUser x
+{
+    "_id": "66bfebf2d6efa23792df503e",
+    "username": "bob"
+}
+
+DELETE
+http://localhost:3000/api/admin/deleteuser x
+{
+    "_id": "66bfebf2d6efa23792df503e"
+}
+
+
+TAG
+
+GET
+http://localhost:3000/api/admin/tags x
+
+POST
+http://localhost:3000/api/admin/addTag x
+{
+    "name": "Horror",
+    "relatedTags": "Motivational, Success"
+}
+
+PUT
+http://localhost:3000/api/admin/updateTag x
+{
+    "_id": "66bfedbff2670083db576c98",
+    "description": "Quotes that scares you and your kids"
+}
+
+DELETE
+http://localhost:3000/api/admin/deleteTag x
+{
+    "_id": "66bfedbff2670083db576c98"
+}

@@ -2,7 +2,7 @@ const ensureAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
       return next();
     }
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthenticated' });
   };
   
   const ensureAdmin = (req, res, next) => {
