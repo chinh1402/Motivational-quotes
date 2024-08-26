@@ -212,10 +212,111 @@ UpdateAccountRequestConfirmed API x
 
 
 1. Build a macro on the frontend that does calculate the lastSendingDay based on the number of quotes available. 
-2. Adding when deleting users, delete the quote fav count for it.
+2. Adding when deleting users, delete the quote fav count for it. x
 
 
 3. Adding userConsent field in quoteSequence. Due to the fact that onhalt can be changed if they press the continue the service. The 
-Email re-confirm was a mandatory act.
+Email re-confirm was a mandatory act. x
 
-4. Make a screen to show that email is sent. After it is confirmed, show modal.
+4. Make a screen to show that email is sent. After it is confirmed, show modal. 
+
+0. Mandatory: Build responsive on figma. Then we can move on to frontend
+0.-1: Build a screen for email service saying that it's waiting for userConsent.
+
+21/8
+test UI with different quote lengths:
+<= 225: 2089 too long
+<= 200: 2074 too long
+<= 175: 2031 too long
+
+<= 150: 1951 good enough
+<= 125: 1778
+<= 100: 1487
+
+Add toolongforwebUI field for quote pre "save", then refetch quotes. 
+Or just write a plugin that add in manually, it's easier that way
+How does this works?
+1. What interacts with quotes: 
+all things that related to get / create / update / delete quotes.
+all things that related to other schemas that save quotes.
+re-create daily sequence with new boolean.
+Users do get access to quotes that are too long
+Quotes that are too long do get shown at singular quote showcase, but with limitation ...
+
+==> Things that gonna be changed:
+0.0: pre "save", add in "toolongforwebUI" if lengths is > 150 x 
+0.1: Make a small module so that it add in toolongforwebUI for each fields. x
+0.2: Re-create daily sequence with new toolongforwebUI = false x
+0.3: Re-create gens for random quote sequence (unauthorized user) with toolongforwebUI = false x
+0.4: This doesn't account for the fact that if the quote is later changed, 
+All the related settings (after user / admin signing up for using this quote) will still be kept. The boolean toolongforwebUI can be changed upon saving. 
+But those who happened to have that quote before it was shown, cant be changed, cause it was saved.
+0.5 Test all of those changes x
+
+0.51. Create quote sequence for admin also need that x
+
+0.6 Test logout x
+=> comment status 200 and then uncomment redirect
+
+0.65 rewrite signup API. Put your emails 
+problem occur now in signup API: x
+1. If you were to sign up, after signing up, do users sign up using username or email? What happened if they used email to log in?
+=> User aren't allowed to sign in using either information. They MUST verify on email first.
+===> You need to make one Confirmed API x
+=> Admins don't have to verify using email upon signing up for emails service.
+
+
+0.7 Write emails sending for: 
+
+User created (unauthenticated) x
+
+http://localhost:3000/api/signup
+http://localhost:3000/api/signupConfirmed?email=bausu@gmail.com
+
+password changed (authenticated) x
+
+http://localhost:3000/api/authenticated/changePasswordRequest
+http://localhost:3000/api/authenticated/changePasswordConfirmed
+
+
+User data updated (authenticated) x
+
+http://localhost:3000/api/authenticated/updateAccountRequest
+http://localhost:3000/api/authenticated/updateAccountRequestConfirmed
+
+
+email service userConsent (authenticated)
+
+http://localhost:3000/api/authenticated/emailServiceSignup
+http://localhost:3000/api/authenticated/emailServiceSignupConfirmed
+
+
+Tasks: 
+1. Apply email services onto those apis
+2. Change password chanign logic
+AND WE'RE GOOOOOOOOOOOOOOOD
+
+3. Make a small sign up / login form so that it saved session
+=> Test session
+=> Test all the emails services api
+
+
+===> Remake password logic so that it takes in a Token, just to make the change password page not loading unintended
+
+4. I forgot we need daily mails :>
+
+0... After changing password, redirect the user to home page with success message
+
+We do all of this shit good :D
+
+Anywho
+
+Last few final tasks:
+
+0. Changing the update user and quote sequence to GET request
+// nvm you can't do that logic
+// Finished the logic
+
+
+1. Rewrite daily email codes
+2. Make daily email templates

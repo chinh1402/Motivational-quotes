@@ -1,1 +1,6 @@
 1. There's an extra call on quoteSequence.. Dunno how to optimise that
+
+26/8/2024
+2. somehow admin email got used when email service signup error?
+fixed it, I assigned variable instead of writing conditional
+

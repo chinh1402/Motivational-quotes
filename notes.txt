@@ -22,7 +22,9 @@ Why did I decided to give 1 user only 1 email?
 Cause it serves as Identity. And if there are multiple emails, what happen if the sub-email get signed up? Where do you login to? Main email account?
 
 
-Creating admin sequence using this query:
+set up setting for daily    
+http://localhost:3000/api/admin/createQuoteSequence
+
 {
     "email": "process.env.ADMIN_EMAIL",
     "sequenceType": "random",
@@ -32,3 +34,6 @@ Creating admin sequence using this query:
     "lastSendingDay": "2024-11-30",
     "sendAt": "05:00"
 }
+
+CTA button href 
+http://boilerplatecode.expectedtobereplaced

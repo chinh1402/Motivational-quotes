@@ -1,1 +1,5 @@
 For quote Favorite task, if I put singular id, would it be more drained compared to a list of id (string, seperate by comma)
+
+I wonder..
+I used req.query to get the query upon confirming the user with specified email..
+Can I use req.body or req.param??? That need more research

@@ -1,5 +1,6 @@
 Unauthenicate
 http://localhost:3000/api/signup
+http://localhost:3000/api/signupConfirmed?email=bausu@gmail.com
 http://localhost:3000/api/login
 http://localhost:3000/api/logout
 http://localhost:3000/api/google
@@ -16,6 +17,7 @@ http://localhost:3000/api/authenticated/updateAccountRequest
 http://localhost:3000/api/authenticated/updateAccountRequestConfirmed
 http://localhost:3000/api/authenticated/getFavoriteQuotes
 http://localhost:3000/api/authenticated/changePasswordRequest
+http://localhost:3000/api/authenticated/changePasswordVerifyToken?token=tokenvalue
 http://localhost:3000/api/authenticated/changePasswordConfirmed
 http://localhost:3000/api/authenticated/deleteSelfFromUser
 http://localhost:3000/api/authenticated/toggleEmailService

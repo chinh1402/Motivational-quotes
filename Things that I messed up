@@ -60,5 +60,24 @@ Are two different things
 
 14. For some reason, you gotta cd to /utils/onlyuseonce to access .env... when running fetchQuotev2. dunno why
 
+15. Set html for email sending so that it send html (instead of text)
+
+16. So, whatever path you're standing at, It need to has the files that you're importing in for the code you're running. Im standing at 
+/backend/utils/onlyuseonce. It cant find the file with the name of /backend/.env        Opposite to 14.
+
+17. The old change password is:
+User type in their old password and new password. But you gotta verify using email afterward. => Result in you gotta save new password somewhere
+But if you do that, you gotta hash it again.. But in user.js there's an auto password hashing function
+
+=> So in short, should have accounted for the fact that password handling need to be taken more seriously
+
+18. My site login logout cookie is shit
+- It only saves cookie in one browser session. If that browser closes, user gotta log in again! :(
+
+NEVERMIND it does!
+:>
+
+I still don't understand shits
 
 
+19. On frontend, when you do withCredential: true. It must be the 3rd params
