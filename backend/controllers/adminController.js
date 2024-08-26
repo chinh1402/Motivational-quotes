@@ -66,6 +66,12 @@ exports.getQuotes = async (req, res) => {
 exports.createQuote = async (req, res) => {
   const { author, content, tags } = req.body;
 
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+    });
+  }
   // Validate required fields. Tags can be null
   if (!author || !content) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -372,13 +378,11 @@ exports.createQuoteSequence = async (req, res) => {
     lastSendingDay,
     sendAt,
   } = req.body;
-  // sendAt at is a string that looks like this: 10:17, 22:17, 00:01, 23:59
 
   // Validate input
   if (
     !email ||
     !sequenceType ||
-    tags === undefined ||
     !timezone ||
     !startSendingDay ||
     !lastSendingDay ||
@@ -390,88 +394,120 @@ exports.createQuoteSequence = async (req, res) => {
   }
 
   try {
-    // Check if user exists
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
-    }
-
-    const existingSequence = await QuoteSequence.findOne({
-      email: user.email,
-    });
-    if (existingSequence) {
-      return res
-        .status(400)
-        .send({
-          error:
-            "User already signed up for email service, cancel current service first..",
-        });
-    }
-
-    // tag logic handling
-    let tagIds;
-    let tagObjects;
-    if (tags) {
-      const tagArray = tags.split(",").map((tag) => tag.trim());
-      tagObjects = await Tag.find({ name: { $in: tagArray } });
-      tagIds = tagObjects.map((tag) => tag._id);
-    }
-
-    // example of possibleQuotesNumberId would be [0,12,20,54]
-    let possibleQuotesNumberId = await Quote.distinct("quoteNumberId", {
-      tags: { $in: tagIds },
-    });
-
-    if (possibleQuotesNumberId.length == 0) {
-      // get all quotes
-      possibleQuotesNumberId = await Quote.distinct("quoteNumberId");
-    }
-
-    // Generate shuffled quote sequence (this should return an array of quote IDs)
-    const shuffledSequence = await quoteSequenceGenerator(
-      possibleQuotesNumberId
-    );
-    // after shuffled: [12,0,54,20]
-
     if (!req.user) {
       return res.status(401).json({
         error:
           "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
       });
     }
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
 
-    // tags is not right
-    // shuffledSequence logic is outdated
-    const quoteSequence = new QuoteSequence({
+    // Check if the user is already signed up for the email service
+    const existingSequence = await QuoteSequence.findOne({
       email: user.email,
-      quoteSequence: shuffledSequence,
-      sequence_type: sequenceType,
-      tags: tagIds || [],
-      timezone,
-      start_sending_day: new Date(startSendingDay),
-      last_sending_day: new Date(lastSendingDay),
-      send_daily_at: sendAt,
-      createdBy: req.user._id,
-      updatedBy: req.user._id,
-      // req.user is admin. Since this is Admin API. User is the person who signed up for the service.
     });
-    await quoteSequence.save();
+    if (existingSequence) {
+      return res.status(400).send({
+        error:
+          "User already signed up for email service, cancel current service first.",
+      });
+    }
 
-    // Update user sign up for Email status
+    let quoteSequence;
+    if (sequenceType === "daily") {
+      // Fetch the Admin's daily sequence
+      const dailySequence = await QuoteSequence.findOne({
+        email: process.env.ADMIN_EMAIL,
+      });
+      if (!dailySequence) {
+        return res.status(404).send({
+          error:
+            "Daily sequence for Admin not found, please follow the guidelines in notes.txt",
+        });
+      }
+
+      // Create a new quote sequence for the user
+      quoteSequence = new QuoteSequence({
+        email: user.email,
+        quoteSequence: dailySequence.quoteSequence,
+        sequenceType: "daily",
+        tags: dailySequence.tags,
+        currentDay: dailySequence.currentDay,
+        start_sending_day: new Date(startSendingDay),
+        last_sending_day: new Date(lastSendingDay),
+        timezone,
+        send_daily_at: sendAt,
+        createdBy: req.user._id,
+        updatedBy: req.user._id,
+      });
+      await quoteSequence.save();
+
+      // Increment the quoteSequence_count for the associated tags
+      const tagObjects = await Tag.find({ _id: { $in: dailySequence.tags } });
+      for (const tag of tagObjects) {
+        tag.quoteSequence_count += 1;
+        await tag.save();
+      }
+    } else if (sequenceType === "random") {
+      // Handle tags if provided
+      let tagIds = [];
+      if (tags) {
+        const tagArray = tags.split(",").map((tag) => tag.trim());
+        const tagObjects = await Tag.find({ name: { $in: tagArray } });
+        tagIds = tagObjects.map((tag) => tag._id);
+
+        // Increment the quoteSequence_count for the associated tags
+        for (const tag of tagObjects) {
+          tag.quoteSequence_count += 1;
+          await tag.save();
+        }
+      }
+
+      // Fetch possible quote IDs based on tags
+      let possibleQuotesNumberId = await Quote.distinct("quoteNumberId", {
+        tags: { $in: tagIds },
+        toolongforwebUI: false,
+      });
+
+      // If no quotes are found, get all quote IDs
+      if (possibleQuotesNumberId.length === 0) {
+        possibleQuotesNumberId = await Quote.distinct("quoteNumberId");
+      }
+
+      // Generate a shuffled quote sequence
+      const shuffledSequence = await quoteSequenceGenerator(
+        possibleQuotesNumberId
+      );
+
+      // Create a new quote sequence for the user
+      quoteSequence = new QuoteSequence({
+        email: user.email,
+        quoteSequence: shuffledSequence,
+        sequence_type: sequenceType,
+        tags: tagIds,
+        timezone,
+        start_sending_day: new Date(startSendingDay),
+        last_sending_day: new Date(lastSendingDay),
+        send_daily_at: sendAt,
+        createdBy: req.user._id,
+        updatedBy: req.user._id,
+      });
+      await quoteSequence.save();
+    }
+
+    // Mark the user as signed up for the email service
     user.isSignedupForEmail = true;
     await user.save();
 
-    // Update Tags cause there's a tags Sequence count on tags.
-    if (tagObjects) {
-      for (const tagObject of tagObjects) {
-        tagObject.quoteSequence_count += 1;
-        await tagObject.save();
-      }
-    }
-
     // Send confirmation response
     console.log("Created a quote sequence for", user.email);
-    res.status(200).send({ message: "Quote sequence created successfully" });
+    res
+      .status(200)
+      .send({ message: "Quote sequence created successfully", quoteSequence });
   } catch (error) {
     console.error("Error creating quote sequence:", error);
     res.status(500).send({ error: "Internal server error" });

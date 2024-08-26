@@ -1,7 +1,6 @@
 const nodemailer = require('nodemailer');
-require('dotenv').config();
+require('dotenv').config("../.env");
 
-// console.log(process.env.ADMIN_EMAIL)
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -12,12 +11,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const sendEmail = (to, subject, text) => {
+const sendEmail = (to, subject, html) => {
   const mailOptions = {
     from: `Motivational Quote <${process.env.ADMIN_EMAIL}>`,
     to,
     subject,
-    text
+    html
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

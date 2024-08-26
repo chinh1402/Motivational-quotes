@@ -3,6 +3,8 @@ const { body, validationResult } = require("express-validator");
 const passport = require("passport");
 const Quote = require("../models/quote");
 const Tag = require("../models/tag");
+const crypto = require("crypto");
+const configuratingEmails = require("../utils/configuratingEmails");
 require("dotenv").config();
 
 exports.signup = [
@@ -40,33 +42,80 @@ exports.signup = [
       const existingUser = await User.findOne({
         $or: [{ username }, { email }],
       });
+
       if (existingUser) {
         return res
           .status(409)
           .json({ error: "Username or email already exists" });
       }
 
+      const garbageUsername = `user_${crypto
+        .randomBytes(8)
+        .toString("hex")}_${Date.now()}`;
+      const garbageEmail = `${crypto
+        .randomBytes(8)
+        .toString("hex")}_${Date.now()}@example.com`;
       // Create a new user instance
       const newUser = new User({
-        username,
+        username: garbageUsername,
         password,
-        email,
-        timezone: "UTC", // Default timezone
-        role: 0,
-        agreedtoTOSandPrivacyPolicy: false,
+        email: garbageEmail,
+        tempUpdateStorage: {
+          username,
+          email,
+        },
       });
 
       // Await for save operation to complete
       await newUser.save();
 
+      // Send email
+      configuratingEmails("signupVerification", { email });
+
       // Respond with success message
-      res.status(201).json({ message: "User registered successfully" });
+      res.status(200).json({
+        message:
+          "Account created, data saved in temporary storage, and verification email sent",
+      });
     } catch (error) {
       console.error("Error registering user:", error);
       res.status(500).json({ error: "Error registering user" });
     }
   },
 ];
+
+exports.signupConfirmed = async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email not provided" });
+  }
+  try {
+    // Find the user by the email in tempUpdateStorage
+    const user = await User.findOne({ "tempUpdateStorage.email": email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "User not found or already verified" });
+    }
+
+    // Update the user's main fields with data from tempUpdateStorage
+    user.username = user.tempUpdateStorage.username;
+    user.email = user.tempUpdateStorage.email;
+
+    // Clear the tempUpdateStorage field after moving data
+    user.tempUpdateStorage = {};
+
+    // Save the updated user
+    await user.save();
+    
+    res.status(200).json({ message: "Account Success verifying account" });
+  } catch (error) {
+    console.error("Error confirming signup:", error);
+    res.status(500).json({ error: "Error confirming signup" });
+  }
+};
 
 exports.login = (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
@@ -120,7 +169,7 @@ exports.logout = (req, res) => {
   req.logout(req.user, (err) => {
     if (err) return next(err);
     res.status(200).json({ message: "Logout successful, redirecting..." });
-    res.redirect("/");
+    // res.redirect("/");
   });
 };
 
@@ -155,9 +204,12 @@ exports.getQuoteList = async (req, res) => {
       const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
       const tagObjects = await Tag.find({ name: { $in: tagsArray } });
       const tagObjects_ids = tagObjects.map((tag) => tag._id);
-    
-      searchQuery.tags = random ? { $in: tagObjects_ids } : { $all: tagObjects };
+
+      searchQuery.tags = random
+        ? { $in: tagObjects_ids }
+        : { $all: tagObjects };
     }
+    searchQuery.toolongforwebUI = false;
 
     const quotes = random
       ? await Quote.aggregate([

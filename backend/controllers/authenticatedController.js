@@ -3,9 +3,12 @@ const quoteSequenceGenerator = require("../utils/quoteSequenceGenerator");
 const User = require("../models/user");
 const QuoteSequence = require("../models/quoteSequence");
 const Quote = require("../models/quote");
-const Tag = require("../models/tag")
+const Tag = require("../models/tag");
 const passwordValidator = require("../utils/passwordValidator");
 const bcrypt = require("bcryptjs");
+const configuratingEmails = require("../utils/configuratingEmails");
+const jwt = require("jsonwebtoken");
+require("dotenv").config("../.env");
 
 exports.emailUnsubscribe = async (req, res) => {
   try {
@@ -15,22 +18,43 @@ exports.emailUnsubscribe = async (req, res) => {
           "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
       });
     }
-    const user = await User.findOne({ _id: req.user._id });
+
+    // Check if quote sequence exists
+    const existingSequence = await QuoteSequence.findOne({
+      email: req.user.email,
+    });
+    if (!existingSequence) {
+      return res.status(404).send({ error: "Quote sequence not found" });
+    }
+
+    if (existingSequence.tags.length > 0) {
+      const tagObjects = await Tag.find({
+        _id: { $in: existingSequence.tags },
+      });
+      // Update the tags
+      for (const tagObject of tagObjects) {
+        tagObject.quoteSequence_count -= 1;
+        await tagObject.save();
+      }
+    }
+
+    const user = await User.findOne({ email: existingSequence.email });
+
+    // Update user sign up for Email status
     if (!user) {
       return res.status(404).send({ error: "User not found" });
     }
-    const existingSequence = await QuoteSequence.findOne({
-      email: user.email,
-    });
-    if (!existingSequence) {
-      return res
-        .status(400)
-        .send({ error: "User has not signed up for daily emails" });
-    }
-    await QuoteSequence.deleteOne({ email: user.email });
-    res.status(200).send({ message: "Unsubscription successful" });
+
+    user.isSignedupForEmail = false;
+    await user.save();
+
+    // Delete quote sequence
+    await QuoteSequence.deleteOne({ email: req.user.email });
+    // Send confirmation response
+    console.log("Deleted quote sequence for", user.email);
+    res.status(200).send({ message: "Quote sequence deleted successfully" });
   } catch (error) {
-    console.error("Error unsubscribing from daily emails:", error);
+    console.error("Error deleting quote sequence:", error);
     res.status(500).send({ error: "Internal server error" });
   }
 };
@@ -45,6 +69,8 @@ exports.emailServiceSignupConfirmed = async (req, res) => {
       });
     }
 
+    const user = await User.findOne({ _id: req.user._id });
+
     const quoteSequence = await QuoteSequence.findOne({
       email: req.user.email,
     });
@@ -55,6 +81,9 @@ exports.emailServiceSignupConfirmed = async (req, res) => {
     quoteSequence.user_consent = true;
     quoteSequence.on_halt = true;
     await quoteSequence.save();
+
+    user.isSignedupForEmail = true;
+    await user.save();
     res
       .status(200)
       .json({ message: "User consent confirmed, Email service activated" });
@@ -125,7 +154,7 @@ exports.emailServiceSignup = async (req, res) => {
       quoteSequence = new QuoteSequence({
         email: user.email,
         quoteSequence: dailySequence.quoteSequence,
-        sequenceType: "daily",
+        sequence_type: sequenceType,
         tags: dailySequence.tags,
         currentDay: dailySequence.currentDay,
         start_sending_day: new Date(startSendingDay),
@@ -161,6 +190,7 @@ exports.emailServiceSignup = async (req, res) => {
       // Fetch possible quote IDs based on tags
       let possibleQuotesNumberId = await Quote.distinct("quoteNumberId", {
         tags: { $in: tagIds },
+        toolongforwebUI: false,
       });
 
       // If no quotes are found, get all quote IDs
@@ -189,15 +219,11 @@ exports.emailServiceSignup = async (req, res) => {
       await quoteSequence.save();
     }
 
-    // Mark the user as signed up for the email service
-    user.isSignedupForEmail = true;
-    await user.save();
-
-    // Send confirmation response
-    console.log("Created a quote sequence for", user.email);
-    res
-      .status(200)
-      .send({ message: "Quote sequence created successfully", quoteSequence });
+    configuratingEmails("confirmSignupEmailservice", { email: user.email });
+    res.status(200).send({
+      message: "Success! Await for email confirmation",
+      quoteSequence,
+    });
   } catch (error) {
     console.error("Error creating quote sequence:", error);
     res.status(500).send({ error: "Internal server error" });
@@ -244,7 +270,7 @@ exports.updateAccountRequest = async (req, res) => {
 
     if (email) {
       // Check if email is already used by another user
-      const existingUser = User.findOne({ email, _id: { $ne: req.user._id } });
+      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
       if (existingUser) {
         return res.status(400).json({ error: "Email is already in use" });
       }
@@ -304,6 +330,7 @@ exports.updateAccountRequest = async (req, res) => {
     await userWithUpdateRequest.save();
 
     // Send response with the updated user details
+    configuratingEmails("userDataUpdate", { email: req.user.email });
     res.json({
       message: "Request is sent successfully, await for email confirmation",
       user: userWithUpdateRequest,
@@ -334,13 +361,15 @@ exports.updateAccountRequestConfirmed = async (req, res) => {
 
     if (updateData.email) {
       // Check if email is already used by another user
-      const existingUser = User.findOne({ email, _id: { $ne: req.user._id } });
+      const email = updateData.email
+      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
       if (existingUser) {
         return res.status(400).json({ error: "Email is already in use" });
       }
       userWithUpdateRequest.email = updateData.email;
     }
     if (updateData.username) {
+      const username = updateData.username
       const existingUser = await User.findOne({
         username,
         _id: { $ne: req.user._id },
@@ -484,9 +513,9 @@ exports.changePasswordRequest = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { oldPassword, newPassword } = req.body;
+    const { oldPassword } = req.body;
 
-    if (!oldPassword || !newPassword) {
+    if (!oldPassword) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -494,22 +523,46 @@ exports.changePasswordRequest = async (req, res) => {
       return res.status(400).json({ error: "Old password is incorrect" });
     }
 
-    if (passwordValidator(newPassword) !== null) {
-      return res.status(400).json({ error: passwordValidator(newPassword) });
-    }
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    user.tempUpdateStorage = { newPassword };
-    await user.save();
-    res
-      .status(200)
-      .json({ message: "Data saved. Await for email confirmation" });
+    // Then we send verification email to save
+    configuratingEmails("passwordUpdate", { email: user.email, token });
+
+    res.status(200).json({ message: "Success. Email sent" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error changing password" });
   }
 };
 
+// This whole thing is written so that It will redirect user from UI if no permission
+exports.changePasswordVerifyToken = async (req, res) => {
+  const { token } = req.query;
+
+  try {
+    if (!token) {
+      return res.status(400).json({ error: "Token not provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) {
+      return res.status(400).json({ error: "Invalid token" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Token verified, user proceed to the page" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server errors" });
+  }
+};
+
 exports.changePasswordConfirmed = async (req, res) => {
+  const { newPassword } = req.body;
+
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -522,14 +575,12 @@ exports.changePasswordConfirmed = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { newPassword } = user.tempUpdateStorage;
-    if (!newPassword) {
-      return res.status(400).json({ error: "Missing datas (newPassword)" });
+    // Invalid
+    if (passwordValidator(newPassword) !== null) {
+      return res.status(400).json({ error: passwordValidator(newPassword) });
     }
 
-    // No hashing since there's an automatic hash in user.js
     user.password = newPassword;
-    user.tempUpdateStorage = {};
     await user.save();
     res.status(200).json({ message: "Password successfully changed" });
   } catch (error) {

@@ -115,7 +115,6 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    console.log("From mongodb, expecting an ObjectID serving as session:", id)
     const user = await User.findById(id);
     done(null, user);
   } catch (err) {

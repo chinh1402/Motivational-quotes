@@ -35,6 +35,9 @@ const quoteSchema = new mongoose.Schema({
     required: true,
     default: []
   },
+  toolongforwebUI: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -55,6 +58,14 @@ const quoteSchema = new mongoose.Schema({
   }
 });
 
+quoteSchema.pre('save', async function(next) {
+  try {
+    this.length > 150 ? this.toolongforwebUI = true : this.toolongforwebUI = false
+    next();
+  } catch (error) {
+    next(error); 
+  }
+});
 
 const Quote = mongoose.model("Quote", quoteSchema);
 
