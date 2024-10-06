@@ -41,7 +41,7 @@ async function fetchQuotes() {
                     $setOnInsert: {
                       name: tagName,
                       description: "",
-                      related_tags: [],
+                      relatedTags: [],
                       color: "",
                       icon: "",
                       createdBy: process.env.GOD_USER,

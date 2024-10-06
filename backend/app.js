@@ -17,9 +17,9 @@ const authenticatedRoutes = require('./routes/authenticatedRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { ensureAuthenticated, ensureAdmin } = require('./middlewares/authMiddleware');
 
-require('./utils/cronJob');
-
 const app = express();
+
+require('./utils/cronJob');
 
 // Middleware
 app.use(cors({
@@ -38,5 +38,7 @@ app.use('/api', unregisteredRoutes);
 app.use('/api/authenticated', ensureAuthenticated, authenticatedRoutes);
 // app.use('/api/admin', ensureAuthenticated, ensureAdmin, adminRoutes);
 app.use('/api/admin', adminRoutes);
+
+
 
 module.exports = app;

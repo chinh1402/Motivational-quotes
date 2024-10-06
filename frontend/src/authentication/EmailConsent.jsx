@@ -60,8 +60,6 @@ function EmailConsent() {
           required
         >
           <option value="daily" defaultValue>Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
           {/* Add other options as needed */}
         </select>
         <input
@@ -70,6 +68,7 @@ function EmailConsent() {
           placeholder="Timezone (e.g., UTC)"
           value={formData.timezone}
           onChange={handleChange}
+          readOnly
           required
         />
         <input

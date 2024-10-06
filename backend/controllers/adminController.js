@@ -33,7 +33,7 @@ exports.getQuotes = async (req, res) => {
     if (tags) {
       const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
       const tagObjects = await Tag.find({ name: { $in: tagsArray } });
-      searchQuery.tags = { $all: tagObjects }; // Match documents where tags contain all of the specified tags
+      searchQuery.tags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
     }
 
     // Fetch quotes with pagination and search
@@ -106,8 +106,8 @@ exports.createQuote = async (req, res) => {
       tagObjects = await Tag.find({ name: { $in: tagsArray } });
 
       tagObjects.forEach(async (tagObject) => {
-        tagObject.quotes_list.push(newQuoteNumberId);
-        tagObject.quotes_count += 1;
+        tagObject.quoteList.push(newQuoteNumberId);
+        tagObject.quoteCount += 1;
         tagObject.updatedBy = req.user._id;
         await tagObject.save();
       });
@@ -127,6 +127,7 @@ exports.createQuote = async (req, res) => {
       author,
       content,
       tags: tagObjects,
+      tagNames: tags,
       authorSlug: authorSlugFromAuthor(author),
       length: content.length,
       createdBy: req.user._id,
@@ -146,13 +147,20 @@ exports.createQuote = async (req, res) => {
 };
 
 exports.updateQuote = async (req, res) => {
-  const { quoteNumberId, author, content, tags } = req.body;
+  const { quoteNumberId, author, content, tags, override = "false" } = req.body;
 
   // Validate required fields
   if (!quoteNumberId) {
     return res.status(400).json({
       error:
         "Missing quoteNumberId, Can't Identify quote that's needed to update",
+    });
+  }
+
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
     });
   }
 
@@ -184,7 +192,9 @@ exports.updateQuote = async (req, res) => {
         }
       }
 
-      if (similarQuote) {
+      // similarQuote = true, override = true, send res
+
+      if (similarQuote && override === "false") {
         return res
           .status(400)
           .json({ error: "A similar quote already exists", similarQuote });
@@ -195,15 +205,17 @@ exports.updateQuote = async (req, res) => {
 
     // Frontend should add tags as "" instead of not passing anything
     if (tags !== undefined) {
-      const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
+      const tagsArray = tags.includes(",")
+        ? tags.split(",").map((tag) => tag.trim()) // Split by commas and trim spaces
+        : [tags.trim()]; // If no comma, treat it as a single tag
       modifiedTagObjects = await Tag.find({ name: { $in: tagsArray } });
 
       // Updating tags
       for (const tagObject of modifiedTagObjects) {
         if (!quote.tags.includes(tagObject._id.toString())) {
           // Convert ObjectID to string for comparison
-          tagObject.quotes_list.push(quoteNumberId);
-          tagObject.quotes_count += 1;
+          tagObject.quoteList.push(quoteNumberId);
+          tagObject.quoteCount += 1;
           tagObject.updatedBy = req.user._id;
           await tagObject.save();
         }
@@ -217,10 +229,10 @@ exports.updateQuote = async (req, res) => {
             (modTag) => modTag._id.toString() === tagObject._id.toString()
           )
         ) {
-          const index = tagObject.quotes_list.indexOf(quoteNumberId);
+          const index = tagObject.quoteList.indexOf(quoteNumberId);
           if (index !== -1) {
-            tagObject.quotes_list.splice(index, 1);
-            tagObject.quotes_count -= 1;
+            tagObject.quoteList.splice(index, 1);
+            tagObject.quoteCount -= 1;
             tagObject.updatedBy = req.user._id;
             await tagObject.save();
           }
@@ -228,6 +240,9 @@ exports.updateQuote = async (req, res) => {
       }
 
       quote.tags = modifiedTagObjects.map((tagObj) => tagObj._id); // Save only the ObjectIDs
+      quote.tagNames = modifiedTagObjects
+        .map((tagObj) => tagObj.name)
+        .join(", ");
     }
 
     if (!req.user) {
@@ -275,10 +290,10 @@ exports.deleteQuote = async (req, res) => {
       const tagObjects = await Tag.find({ _id: { $in: tagsObjectIDsArr } });
 
       tagObjects.forEach(async (tagObject) => {
-        let index = tagObject.quotes_list.indexOf(quoteNumberId);
+        let index = tagObject.quoteList.indexOf(quoteNumberId);
         if (index !== -1) {
-          tagObject.quotes_list.splice(index, 1);
-          tagObject.quotes_count -= 1;
+          tagObject.quoteList.splice(index, 1);
+          tagObject.quoteCount -= 1;
           tagObject.updatedBy = req.user._id;
           await tagObject.save();
         }
@@ -310,8 +325,8 @@ exports.getQuoteSequences = async (req, res) => {
     tags,
     timezone,
     sendAt,
-    startDate,
-    lastDate,
+    startSendingDay,
+    lastSendingDay,
   } = req.query; // Default to page 1 and limit 20 if not provided
 
   let searchQuery = {};
@@ -328,7 +343,9 @@ exports.getQuoteSequences = async (req, res) => {
 
   // Tags should contain all specified tags (assuming tags is a comma-separated string)
   if (tags) {
-    searchQuery.tags = { $all: tags.split(",") };
+    const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
+    const tagObjects = await Tag.find({ name: { $in: tagsArray } });
+    searchQuery.tags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
   }
 
   // Exact match for timezone
@@ -341,12 +358,12 @@ exports.getQuoteSequences = async (req, res) => {
     searchQuery.sendAt = sendAt;
   }
 
-  if (startDate) {
-    searchQuery.startDate = startDate;
+  if (startSendingDay) {
+    searchQuery.startSendingDay = new Date(startSendingDay);
   }
 
-  if (lastDate) {
-    searchQuery.lastDate = lastDate;
+  if (lastSendingDay) {
+    searchQuery.lastSendingDay = new Date(lastSendingDay);
   }
 
   try {
@@ -403,7 +420,10 @@ exports.createQuoteSequence = async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).send({ error: "User not found" });
+      return res.status(404).send({
+        error:
+          "User not found, either they're not signed up, or there are unexpected error",
+      });
     }
 
     // Check if the user is already signed up for the email service
@@ -436,20 +456,22 @@ exports.createQuoteSequence = async (req, res) => {
         quoteSequence: dailySequence.quoteSequence,
         sequenceType: "daily",
         tags: dailySequence.tags,
+        tagNames: dailySequence.tagNames,
         currentDay: dailySequence.currentDay,
-        start_sending_day: new Date(startSendingDay),
-        last_sending_day: new Date(lastSendingDay),
+        startSendingDay: new Date(startSendingDay),
+        lastSendingDay: new Date(lastSendingDay),
         timezone,
-        send_daily_at: sendAt,
+        sendAt,
         createdBy: req.user._id,
         updatedBy: req.user._id,
+        userConsent: true,
       });
       await quoteSequence.save();
 
-      // Increment the quoteSequence_count for the associated tags
+      // Increment the quoteSequenceCount for the associated tags
       const tagObjects = await Tag.find({ _id: { $in: dailySequence.tags } });
       for (const tag of tagObjects) {
-        tag.quoteSequence_count += 1;
+        tag.quoteSequenceCount += 1;
         await tag.save();
       }
     } else if (sequenceType === "random") {
@@ -460,9 +482,9 @@ exports.createQuoteSequence = async (req, res) => {
         const tagObjects = await Tag.find({ name: { $in: tagArray } });
         tagIds = tagObjects.map((tag) => tag._id);
 
-        // Increment the quoteSequence_count for the associated tags
+        // Increment the quoteSequenceCount for the associated tags
         for (const tag of tagObjects) {
-          tag.quoteSequence_count += 1;
+          tag.quoteSequenceCount += 1;
           await tag.save();
         }
       }
@@ -487,14 +509,16 @@ exports.createQuoteSequence = async (req, res) => {
       quoteSequence = new QuoteSequence({
         email: user.email,
         quoteSequence: shuffledSequence,
-        sequence_type: sequenceType,
+        sequenceType,
         tags: tagIds,
+        tagNames: tags,
         timezone,
-        start_sending_day: new Date(startSendingDay),
-        last_sending_day: new Date(lastSendingDay),
-        send_daily_at: sendAt,
+        startSendingDay: new Date(startSendingDay),
+        lastSendingDay: new Date(lastSendingDay),
+        sendAt,
         createdBy: req.user._id,
         updatedBy: req.user._id,
+        userConsent: true,
       });
       await quoteSequence.save();
     }
@@ -523,7 +547,7 @@ exports.updateQuoteSequence = async (req, res) => {
     startSendingDay,
     lastSendingDay,
     sendAt,
-    onHalt,
+    mailServiceRunning,
   } = req.body;
   // sendAt is a string that looks like this: 10:17, 22:17, 00:01, 23:59
 
@@ -535,8 +559,7 @@ exports.updateQuoteSequence = async (req, res) => {
     !timezone ||
     !startSendingDay ||
     !lastSendingDay ||
-    !sendAt ||
-    !onHalt
+    !sendAt
   ) {
     return res
       .status(400)
@@ -550,6 +573,12 @@ exports.updateQuoteSequence = async (req, res) => {
       return res.status(404).send({ error: "User not found" });
     }
 
+    if (user.email === process.env.ADMIN_EMAIL) {
+      return res.status(400).send({
+        error:
+          "This sequence can't be updated",
+      })
+    }  
     // Find the existing quote sequence
     const existingSequence = await QuoteSequence.findOne({ _id });
 
@@ -559,16 +588,19 @@ exports.updateQuoteSequence = async (req, res) => {
 
     // Update the existing quote sequence details
     existingSequence.timezone = timezone;
-    existingSequence.last_sending_day = new Date(lastSendingDay);
-    existingSequence.send_daily_at = sendAt;
-    existingSequence.on_halt = onHalt || false;
+    existingSequence.lastSendingDay = new Date(lastSendingDay);
+    existingSequence.sendAt = sendAt;
+    existingSequence.mailServiceRunning = mailServiceRunning || false;
     existingSequence.updatedBy = req.user._id;
 
     await existingSequence.save();
 
     // Send confirmation response
     console.log("Updated the quote sequence for", user.email);
-    res.status(200).send({ message: "Quote sequence updated successfully" });
+    res.status(200).send({
+      message: "Quote sequence updated successfully",
+      updatedQuoteSequence: existingSequence,
+    });
   } catch (error) {
     console.error("Error updating quote sequence:", error);
     res.status(500).send({ error: "Internal server error" });
@@ -583,12 +615,22 @@ exports.deleteQuoteSequence = async (req, res) => {
     return res.status(400).send({ error: "_id is required" });
   }
 
+  
+
   try {
     // Check if quote sequence exists
     const existingSequence = await QuoteSequence.findOne({ _id });
+    
     if (!existingSequence) {
       return res.status(404).send({ error: "Quote sequence not found" });
     }
+
+    if (existingSequence.email === process.env.ADMIN_EMAIL) {
+      return res.status(400).send({
+        error:
+          "This sequence can't be deleted",
+      })
+    } 
 
     if (existingSequence.tags.length > 0) {
       const tagObjects = await Tag.find({
@@ -596,7 +638,7 @@ exports.deleteQuoteSequence = async (req, res) => {
       });
       // Update the tags
       for (const tagObject of tagObjects) {
-        tagObject.quoteSequence_count -= 1;
+        tagObject.quoteSequenceCount -= 1;
         await tagObject.save();
       }
     }
@@ -697,7 +739,7 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const {
+  let {
     username,
     email,
     password = process.env.SUPER_SECRET_PASSWORD,
@@ -745,7 +787,7 @@ exports.createUser = async (req, res) => {
       country,
       timezone,
       avatarURL,
-      birthDate,
+      birthDate: new Date(birthDate),
       createdBy: req.user._id,
       updatedBy: req.user._id,
     });
@@ -782,13 +824,18 @@ exports.updateUsers = async (req, res) => {
     return res.status(400).json({ error: "Id is required" });
   }
 
+  const adminAcc = await User.findOne({ _id });
+  if (adminAcc.email === process.env.ADMIN_EMAIL) {
+    return res.status(400).json({ error: "This account cant be updated" });
+  }
+
   try {
     // Construct the update query
     let updateFields = {};
 
     if (email) {
       // Check if email is already used by another user
-      const existingUser = User.findOne({ email, _id: { $ne: _id } });
+      const existingUser = await User.findOne({ email, _id: { $ne: _id } });
       if (existingUser) {
         return res.status(400).json({ error: "Email is already in use" });
       }
@@ -858,7 +905,6 @@ exports.deleteUser = async (req, res) => {
       return res.status(400).json({ error: "Id is required" });
     }
 
-    
     //@ts-check
     if (!req.user) {
       return res.status(401).json({
@@ -870,6 +916,11 @@ exports.deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    if (user.email === process.env.ADMIN_EMAIL) {
+      return res.status(400).json({ error: "This account cant be deleted" });
+    }
+
     // Delete related quoteSequences. One user can only have one email
     await QuoteSequence.deleteOne({ email: user.email });
 
@@ -922,7 +973,8 @@ exports.getTags = async (req, res) => {
 
     if (relatedTags) {
       const tagsArray = relatedTags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
-      searchQuery.related_tags = { $all: tagsArray }; // Match documents where tags contain all of the specified tags
+      const tagObjects = await Tag.find({ name: { $in: tagsArray } });
+      searchQuery.relatedTags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
     }
     if (color) {
       searchQuery.color = { $regex: color, $options: "i" };
@@ -989,7 +1041,8 @@ exports.createTag = async (req, res) => {
     const newTag = new Tag({
       name,
       description,
-      related_tags: tagobjectIDs,
+      relatedTags: tagobjectIDs,
+      relatedTagsNames: relatedTags,
       color,
       icon,
       createdBy: req.user._id,
@@ -1033,8 +1086,16 @@ exports.updateTag = async (req, res) => {
     }
     if (relatedTags) {
       const relatedTagsArray = relatedTags.split(",").map((tag) => tag.trim());
+
+      if (relatedTagsArray.includes(tag.name)) {
+        return res.status(400).json({
+          error: "A tag cannot be related to itself",
+        });
+      }
+
       tagobjectIDs = await Tag.find({ name: { $in: relatedTagsArray } });
-      tag.related_tags = tagobjectIDs;
+      tag.relatedTags = tagobjectIDs;
+      tag.relatedTagsNames = relatedTags;
     }
     if (color !== undefined) {
       tag.color = color;

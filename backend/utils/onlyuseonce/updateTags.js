@@ -16,9 +16,9 @@ async function updateTags() {
         const quotesWithTag = await Quote.find({ tags: tag._id }); // Find all quotes with this tag
         const quoteIds = quotesWithTag.map(quote => quote.quoteNumberId); // Get the quoteNumberIds
   
-        // Update the tag's quotes_list and quotes_count
-        tag.quotes_list = quoteIds;
-        tag.quotes_count = quoteIds.length;
+        // Update the tag's quoteList and quoteCount
+        tag.quoteList = quoteIds;
+        tag.quoteCount = quoteIds.length;
         tag.createdBy = process.env.GOD_USER; // Update the updatedBy field
         tag.updatedBy = process.env.GOD_USER; // Update the updatedBy field
   

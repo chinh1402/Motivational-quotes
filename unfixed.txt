@@ -4,3 +4,27 @@
 2. somehow admin email got used when email service signup error?
 fixed it, I assigned variable instead of writing conditional
 
+9/2/2024
+3. Everytime backend server launches, the cronjob run once.
+=> I forgot that I run it once in demo... :(
+
+22/9/2024
+4. UI bug on frontend/component/Admin/CustomPagination line 27. 
+Randomly variable currentPage turned from number into string before data goes back. Console log and check dev tool
+
+5.
+suggest đổi tên
+http://localhost:3000/api/admin/updateQuote
+http://localhost:3000/api/admin/quote/update
+
+6. Update Quote Sequence tag input bị lệch xuống dưới vài pixel => Fixed, do code chatgpt gen kém :(
+
+7. Khi tạo quoteSequence, thì quoteSequence tìm quote theo OR. Nhưng mà lúc search quotes, thì các quotes đó theo AND???......
+=> Chỉnh hàm get theo $in
+
+8. QuoteSequence getting tags should be AND
+
+9. TagInput có 1 bug khá tai hại. Tại vì phải cập nhật value và mỗi khi cập nhật value thì set lại state cho parent, mà khi set lại state
+cho parent thì value lại được cập nhật lại. Nên Adding Quotesequence + Updating TagInput đang bị bug. 
+
+

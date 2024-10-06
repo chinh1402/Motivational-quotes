@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+      font-size: 10px; /* Set base font size */
+      line-height: 15px; /* Set base line-height */
+      font-family: 'Inter', sans-serif; /* Set default font-family */
+    }
+  
+    body {
+      font-size: 1.3rem; /* This sets the default body font-size based on the html font-size */
+      line-height: inherit; /* Inherit line-height from html */
+      font-family: inherit; /* Inherit font-family from html */
+    }
+}
+
+input[type="checkbox"].toggle-llg {
+  --handleoffset: 2.4rem;
+  height: 2.4rem;
+  width: 4.8rem;
+}
+
+.toggle:checked, 
+.toggle[aria-checked="true"] {
+  color: #FFA032;
+  --tglbg:#333
+}
+
+/* Hide the scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* For Internet Explorer and Edge */
+  scrollbar-width: none;  /* For Firefox */
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+.no-spinner[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator{
+  filter: invert(73%) sepia(7%) saturate(681%) hue-rotate(78deg) brightness(91%) contrast(86%);
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator{
+  filter: invert(73%) sepia(7%) saturate(681%) hue-rotate(78deg) brightness(91%) contrast(86%);
+}

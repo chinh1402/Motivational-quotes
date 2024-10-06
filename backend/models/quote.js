@@ -18,6 +18,10 @@ const quoteSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     default: [],
   },
+  tagNames: {
+    type: String,
+    default: "",
+  },
   authorSlug: {
     type: String,
     required: true,

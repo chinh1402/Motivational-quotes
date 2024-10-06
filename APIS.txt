@@ -21,6 +21,7 @@ http://localhost:3000/api/authenticated/changePasswordVerifyToken?token=tokenval
 http://localhost:3000/api/authenticated/changePasswordConfirmed
 http://localhost:3000/api/authenticated/deleteSelfFromUser
 http://localhost:3000/api/authenticated/toggleEmailService
+http://localhost:3000/api/authenticated/getAllTagNames
 
 Admin APIS:
 http://localhost:3000/api/admin/quotes?page=1&limit=20&tags=Wisdom,Philosophy 

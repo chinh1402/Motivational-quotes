@@ -31,9 +31,6 @@ http://localhost:3000/api/getQuoteList?page=1&limit=20&tags=Wisdom,Philosophy x
 http://localhost:3000/api/getQuoteList?random=true x
 
 Authenticated
-DELETE
-http://localhost:3000/api/quotes/emailUnsubscribed x
-
 GET
 http://localhost:3000/api/authenticated/getAccountDetails x
 
@@ -118,6 +115,9 @@ http://localhost:3000/api/authenticated/emailServiceSignupConfirmed x
 DELETE
 http://localhost:3000/api/authenticated/emailUnsubscribe x
 
+GET
+http://localhost:3000/api/authenticated/getAllTagNames x
+
 Admin APIS:
 QUOTE
 
@@ -174,7 +174,7 @@ http://localhost:3000/api/admin/updateQuoteSequence x
     "startSendingDay":"2024-08-15",
     "lastSendingDay": "2024-08-18",
     "sendAt": "05:00",
-    "onHalt": "false"
+    "mailServiceRunning": "false"
 }
 
 DELETE

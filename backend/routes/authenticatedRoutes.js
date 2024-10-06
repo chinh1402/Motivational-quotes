@@ -14,10 +14,11 @@ router.post('/updateAccountRequest', authenticated.updateAccountRequest);
 router.post('/updateAccountRequestConfirmed', authenticated.updateAccountRequestConfirmed);
 router.get('/getFavoriteQuotes', authenticated.getFavoriteQuotes)
 router.post('/changePasswordRequest', authenticated.changePasswordRequest);
-router.post('/changePasswordVerifyToken', authenticated.changePasswordVerifyToken)
-router.post('/changePasswordConfirmed', authenticated.changePasswordConfirmed)
-router.delete('/deleteSelfFromUser', authenticated.deleteSelfFromUser)
+router.post('/changePasswordVerifyToken', authenticated.changePasswordVerifyToken);
+router.post('/changePasswordConfirmed', authenticated.changePasswordConfirmed);
+router.delete('/deleteSelfFromUser', authenticated.deleteSelfFromUser);
 router.post('/toggleEmailService', authenticated.toggleEmailService);
+router.get('/getAllTagNames', authenticated.getAllTagNames);
 
 
 

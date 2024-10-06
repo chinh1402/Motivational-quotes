@@ -81,3 +81,20 @@ I still don't understand shits
 
 
 19. On frontend, when you do withCredential: true. It must be the 3rd params
+
+20. On unsubscribe email service, withCredential: true on 2nd params, it works... Delete request
+
+// Assumption would be: get/delete requests are 2 params. While post request takes 3 params. Didn't bother searching
+
+21. Give expiration date for the token.
+
+22. if that field is not defined in the modal, then updating doesnt do anything. Im talking about tagNames. .save() after 
+
+30/9
+23. Adding userConsent = true for admin quoteSequence creation.
+
+...
+24. Chỉnh hết modal về Camel case.. Tại vì naming scheme nên chỉ để 1 kiểu chứ đừng thích như nào thì để
+
+
+

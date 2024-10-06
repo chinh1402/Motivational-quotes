@@ -14,40 +14,40 @@ async function dailyEmailSending() {
 
     quoteSequences.forEach(async (quoteSequenceItem) => {
       if (
-        quoteSequenceItem.user_consent === true &&
-        quoteSequenceItem.on_halt === true
+        quoteSequenceItem.userConsent === true &&
+        quoteSequenceItem.mailServiceRunning === true
       ) {
-        const current_day = quoteSequenceItem.current_day;
+        const currentDay = quoteSequenceItem.currentDay;
         const quoteSequenceArray = quoteSequenceItem.quoteSequence;
-        const quoteNumberId = quoteSequenceArray[current_day - 1];
+        const quoteNumberId = quoteSequenceArray[currentDay - 1];
         const quote = await Quote.findOne({ quoteNumberId });
         const emailContent = await generateDailyEmailContent({
-          day: current_day,
+          day: currentDay,
           content: quote.content,
           author: quote.author,
         });
         sendEmail(
           quoteSequenceItem.email,
-          `Day ${current_day} Quote From Quote of the Day`,
+          `Day ${currentDay} Quote From Quote of the Day`,
           emailContent
         );
 
-        quoteSequenceItem.current_day += 1;
+        quoteSequenceItem.currentDay += 1;
 
         await quoteSequenceItem.save();
       } else if (quoteSequenceItem.email === process.env.ADMIN_EMAIL) {
-        quoteSequenceItem.current_day += 1;
+        quoteSequenceItem.currentDay += 1;
         await quoteSequenceItem.save();
       }
 
       const lastSendingDayFormatted = new Date(
-        quoteSequenceItem.last_sending_day
+        quoteSequenceItem.lastSendingDay
       )
         .toISOString()
         .split("T")[0];
 
       if (
-        quoteSequenceItem.current_day >
+        quoteSequenceItem.currentDay >
           quoteSequenceItem.quoteSequence.length ||
         new Date().toISOString().split("T")[0] >= lastSendingDayFormatted
       ) {
@@ -73,7 +73,5 @@ async function dailyEmailSending() {
     console.log(error);
   }
 }
-
-dailyEmailSending();
 
 module.exports = dailyEmailSending;

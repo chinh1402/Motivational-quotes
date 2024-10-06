@@ -68,6 +68,7 @@ function LoggedIn() {
           <button onClick={() => navigate('/updateData')}>Update Data</button>
           <button onClick={handleConfirmUpdateRequest}>Confirm Account Update</button>
           <button onClick={() => navigate('/emailConsent')}>Daily email request</button>
+          <button onClick={() => navigate('/emailUnsubscribe')}>Unsubcribe email</button>
         </div>
       ) : (
         <p>No account details available</p>

@@ -215,7 +215,7 @@ UpdateAccountRequestConfirmed API x
 2. Adding when deleting users, delete the quote fav count for it. x
 
 
-3. Adding userConsent field in quoteSequence. Due to the fact that onhalt can be changed if they press the continue the service. The 
+3. Adding userConsent field in quoteSequence. Due to the fact that mailServiceRunning can be changed if they press the continue the service. The 
 Email re-confirm was a mandatory act. x
 
 4. Make a screen to show that email is sent. After it is confirmed, show modal. 
@@ -320,3 +320,69 @@ Last few final tasks:
 
 1. Rewrite daily email codes
 2. Make daily email templates
+
+26/8:
+and we're done for the backend :>
+
+30/8:
+Start designing responsives on figma
+1. 
+
+2/9:
+
+18/9: Since toeic is due on 2/10...? (Yagi)
+Now's your task:
+1. Organise the structure for your React project
+
+You need to write 2 APIs
+
+2. update quoteSequence APIs so that it takes in tagNames
+3. retest all the apis that got affected
+
+Create Quote x
+Update Quote x
+
+22/9
+Skipping making tag helper, this is an UI component, so it will take some time to create. 
+Skipping CRUD UI board. Use chatgpt prebuilt form
+
+Not skipping toast
+
+24/9
+Adding tagNames for quoteSequence upon adding / update. It affects these APIs:
+
+admin createQuoteSequence
+
+auth emailServiceSignup
+
+30/9
+Change all name to camelCase.. Cái tội đặt tên cẩu thả
+Change allQuoteSequencesTable first. Then we works on inputs and searches.
+Modify inputs for quoteSequences. Then Modals
+Modify inputs for Users. Then Modals
+Modify inputs for Tags. Then Modals
+
+10/1
+Adding focus remove error logic
+
+Continue configuration for buttons.
+
+3/10
+Readonly: Sequence type, tags, send daily at.
+
+4/10:
+daily => cant change tags.
+
+5/10 
+Search for quotesequence doesnt works: tags, lastSendingDay, startsendingday => done
+
+6/10
+Gender, date search query doesn't work, fix that
+
+
+Configure delete and update
+
+
+Write favorite quote admin api for specified user (can be delayed)
+(before building the user UI)
+Write the backend for authenticated => getAllQuotes..

@@ -1,0 +1,57 @@
+<Route path="/get-random-quote" element={<RandomQuotePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+
+        {/* Authenticated Routes */}
+        <Route
+          path="/quote-gallery"
+          element={
+            <ProtectedRouteAuthenticated>
+              <QuoteGalleryPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+        <Route
+          path="/daily-email-signup"
+          element={
+            <ProtectedRouteAuthenticated>
+              <DailyEmailSignupPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <ProtectedRouteAuthenticated>
+              <AccountPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRouteAuthenticated>
+              <FavoritesPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRouteAuthenticated>
+              <ChangePasswordPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+        <Route
+          path="/delete-account"
+          element={
+            <ProtectedRouteAuthenticated>
+              <DeleteAccountPage />
+            </ProtectedRouteAuthenticated>
+          }
+        />
+
+        
+        {/* Handle 404 */}
+        <Route path="*" element={<NotFoundPage />} />

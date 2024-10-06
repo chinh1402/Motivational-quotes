@@ -9,40 +9,45 @@ const quoteSequenceSchema = new mongoose.Schema({
     type: [Number], 
     required: true,
   },
-  sequence_type: {
+  sequenceType: {
     type: String
   },
   tags: {
     type: [mongoose.Schema.Types.ObjectId],
+  },
+  tagNames: {
+    type: String,
+    default: "",
   },
   timezone: {
     type: String,
     required: true,
     default: "UTC"
   },
-  start_sending_day: {
+  startSendingDay: {
     type: Date,
     required: true,
     default: Date.now
   },
-  last_sending_day: {
+  lastSendingDay: {
     type: Date,
     required: true
   },
-  send_daily_at: {
+  sendAt: {
     type: String, // Storing time as a string, e.g., "12:00AM"
     required: true
   },
-  on_halt: {
+  mailServiceRunning: {
     type: Boolean,
     required: true,
     default: false
   },
-  user_consent: {
+  userConsent: {
     type: Boolean,
     default: false
   },
-  current_day: {
+  // currentDay
+  currentDay: {
     type: Number,
     required: true,
     default: 1

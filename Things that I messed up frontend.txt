@@ -1,0 +1,121 @@
+1. I find some problems in defining my frontend structure
+
+Ở luồng FE, có 3 loại user: Unauthenticated, Authenticated và Admin. Admin sẽ được chuyển qua /admin ngay sau khi đăng nhập. Còn Unauthenticated thì sẽ k truy
+cập tài nguyên của Authenticated được. Chỉ khi nào Authenticate thì mới đăng nhập
+
+Một vài vấn đề khi xử lý với authenticated / unauthenticated:
+1. Header đổi khác cho authenticated / unauthenticated nên khó xử lý
+2. Admin chỉ có thể đăng nhập qua google. Sẽ redirect response sang /. Như vậy thì mới response được redirect, còn front vẫn phải xử lý redirect trên client.
+3. Ưu tiên làm luồng FE CRUD trước, để dễ xử lý thông tin.
+
+0. Viết tất cả các API service vào cùng 1 file
+1. Viết lại useAuth (custom hook) để check authentication
+2. Viết Routes và protected route
+Routes cho các path đầu (level cao nhất):
+Unauthenticated
+/
+/get-random-quote
+/login
+/signup
+Authenticated
+/quote-gallery
+/daily-email-signup
+/account
+/favorites
+/change-password
+/delete-account
+Admin
+/admin/
+/admin/quotes
+/admin/quoteSequences
+/admin/users
+/admin/tags
+/admin/survey-tickets
+
+bug #1: skill issues:
+Uncaught SyntaxError: The requested module '/src/hooks/useAuthAuthenticated.jsx' does not provide an export named 'useAuthAuthenticated' (at ProtectedRoutesAuthenticated.jsx:2:10)
+???
+
+export default useAuthAuthenticated;
+So, when importing it, you should import it without curly braces, as it's a default export. Here's the correct way to import it:
+import useAuthAuthenticated from "../hooks/useAuthAuthenticated"; // No curly braces needed for default export
+
+Written 2 hooks, 1 for admin authentication protected route, 1 for admin protected route
+
+
+# Build form login/signup first, then do what you need to do for admins.
+
+Day 1:
+Step when setting up tailwind for project
+1. By default, tailwindcss has PREFLIGHT. Add it in main.jsx
+2. Setting bases font-size, line-height, font-family
+3. Setting up primary for light and dark modes in tailwind.config
+
+Day 2:
+1. build dashboard ui using grid 
+2. Build the home page of admin
+Day 3:
+1. Finish the admin dashboard page
+2. Finish the searching options for admins: normal text, tags, date, sequence types, time in hours
+State, data lifting
+
+There one problem:
+I need to use React to do CRUD operations. But the catch is: 
+If I were to do it manually
+- After add, update, delete, the data should be updated in the UI.
+- If I were to make API calls on each of that, then there would be a lot of api calls. 
+=> After load => calls to render data => After add => calls to render data => After delete => call to render data => Typing in search input => call to render data
+
+There should be a better way to do this. 
+
+Nah it just your logic is flawed
+
+Day 4:
+I have both debounce value and input value. Debounce value was there to make it so that it wont call api everytime you typed in.
+I forgot to reset debounce value, only reset input value. Which lead to a frustrating bug :(
+
+Q: What's postcss?
+
+25/9 1r sangs
+
+Tra tags la AND OPERATOR =))))
+
+1/10
+Oddly logical question. If TextInput is the same as Input type = text, then why are you creating a seperate component???? Same thing with all other input types....
+
+For now, timezone is being used as a textInput due tot he fact that I cant change timezone atm
+
+And I adopt redux to manage states
+
+3/10
+onClick={() => setSubmit(true)}
+is different to
+onClick={setSubmit(true)}
+
+4/10
+
+I should know what a normal select can do, BEFORE building a custom select.
+
+Bug:
+
+Age
+A, g, e, Business
+A, ,,  , g, ,,  , e, ,,  , B, u, s, i, n, e, s, s, Character
+
+Cause by this line:
+useEffect(() => {
+    console.log(value)
+    setTags(value);
+}, [value]);
+
+Took me 3 hours to think of a workaround. Took me just 10 minutes to solve the problem when not think of a workaround. value need a default ""; and don't pass in 
+inputValue when searching
+
+^^ IMPORTANT ^^
+in forms, any button that doesn't declared its type is defaulted to submit....
+^^ IMPORTANT ^^
+
+5/10
+Handle tags CRUD and Users CRUD 
+
+There's no error handling on frontend when receiving error

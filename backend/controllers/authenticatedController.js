@@ -33,7 +33,7 @@ exports.emailUnsubscribe = async (req, res) => {
       });
       // Update the tags
       for (const tagObject of tagObjects) {
-        tagObject.quoteSequence_count -= 1;
+        tagObject.quoteSequenceCount -= 1;
         await tagObject.save();
       }
     }
@@ -60,7 +60,7 @@ exports.emailUnsubscribe = async (req, res) => {
 };
 
 exports.emailServiceSignupConfirmed = async (req, res) => {
-  // Update user_consent in quote sequence to true, also on_halt to true
+  // Update userConsent in quote sequence to true, also mailServiceRunning to true
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -78,8 +78,8 @@ exports.emailServiceSignupConfirmed = async (req, res) => {
       return res.status(404).json({ error: "Quote sequence not found" });
     }
 
-    quoteSequence.user_consent = true;
-    quoteSequence.on_halt = true;
+    quoteSequence.userConsent = true;
+    quoteSequence.mailServiceRunning = true;
     await quoteSequence.save();
 
     user.isSignedupForEmail = true;
@@ -154,22 +154,23 @@ exports.emailServiceSignup = async (req, res) => {
       quoteSequence = new QuoteSequence({
         email: user.email,
         quoteSequence: dailySequence.quoteSequence,
-        sequence_type: sequenceType,
+        sequenceType,
         tags: dailySequence.tags,
+        tagNames: dailySequence.tagNames,
         currentDay: dailySequence.currentDay,
-        start_sending_day: new Date(startSendingDay),
-        last_sending_day: new Date(lastSendingDay),
+        startSendingDay: new Date(startSendingDay),
+        lastSendingDay: new Date(lastSendingDay),
         timezone,
-        send_daily_at: sendAt,
+        sendAt,
         createdBy: req.user._id,
         updatedBy: req.user._id,
       });
       await quoteSequence.save();
 
-      // Increment the quoteSequence_count for the associated tags
+      // Increment the quoteSequenceCount for the associated tags
       const tagObjects = await Tag.find({ _id: { $in: dailySequence.tags } });
       for (const tag of tagObjects) {
-        tag.quoteSequence_count += 1;
+        tag.quoteSequenceCount += 1;
         await tag.save();
       }
     } else if (sequenceType === "random") {
@@ -180,9 +181,9 @@ exports.emailServiceSignup = async (req, res) => {
         const tagObjects = await Tag.find({ name: { $in: tagArray } });
         tagIds = tagObjects.map((tag) => tag._id);
 
-        // Increment the quoteSequence_count for the associated tags
+        // Increment the quoteSequenceCount for the associated tags
         for (const tag of tagObjects) {
-          tag.quoteSequence_count += 1;
+          tag.quoteSequenceCount += 1;
           await tag.save();
         }
       }
@@ -207,12 +208,13 @@ exports.emailServiceSignup = async (req, res) => {
       quoteSequence = new QuoteSequence({
         email: user.email,
         quoteSequence: shuffledSequence,
-        sequence_type: sequenceType,
+        sequenceType,
         tags: tagIds,
+        tagNames: tags,
         timezone,
-        start_sending_day: new Date(startSendingDay),
-        last_sending_day: new Date(lastSendingDay),
-        send_daily_at: sendAt,
+        startSendingDay: new Date(startSendingDay),
+        lastSendingDay: new Date(lastSendingDay),
+        sendAt,
         createdBy: req.user._id,
         updatedBy: req.user._id,
       });
@@ -555,6 +557,10 @@ exports.changePasswordVerifyToken = async (req, res) => {
       .status(200)
       .json({ message: "Token verified, user proceed to the page" });
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Token has expired" });
+    }
+
     console.log(error);
     return res.status(500).json({ error: "Internal server errors" });
   }
@@ -624,7 +630,7 @@ exports.deleteSelfFromUser = async (req, res) => {
 };
 
 exports.toggleEmailService = async (req, res) => {
-  // toggle on_halt in quoteSequence
+  // toggle mailServiceRunning in quoteSequence
 
   try {
     if (!req.user) {
@@ -640,13 +646,30 @@ exports.toggleEmailService = async (req, res) => {
     if (!quoteSequence) {
       return res.status(404).json({ error: "Quote Sequence not found" });
     }
-    quoteSequence.on_halt = !quoteSequence.on_halt;
+    quoteSequence.mailServiceRunning = !quoteSequence.mailServiceRunning;
     await quoteSequence.save();
     res.status(200).json({
-      message: `Email service ${quoteSequence.on_halt ? "on" : "off"}`,
+      message: `Email service ${quoteSequence.mailServiceRunning ? "on" : "off"}`,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error changing email service" });
   }
 };
+
+exports.getAllTagNames = async (req,res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error:
+          "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+      });
+    }
+
+    const tagNames = await Tag.distinct("name");
+    res.status(200).json(tagNames);
+  } catch(error) {
+    console.log(error)
+    res.status(500).json({ error: "Internal server error" });
+  }
+}

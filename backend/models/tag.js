@@ -10,25 +10,30 @@ const TagsSchema = new mongoose.Schema({
     type: String,
     required: false
   },
-  quotes_list: {
+  quoteList: {
     type: [Number],
     required: false,
     default: []
   },
-  quotes_count: {
+  quoteCount: {
     type: Number,
     required: false,
     default: 0
   },
-  quoteSequence_count: {
+  quoteSequenceCount: {
     type: Number,
     required: false,
     default: 0
   },
-  related_tags: {
+  relatedTags: {
     type: [mongoose.Schema.Types.ObjectId],
     required: false,
     default: []
+  },
+  relatedTagsNames: {
+    type: String,
+    required: false,
+    default: ""
   },
   color: {
     type: String,
