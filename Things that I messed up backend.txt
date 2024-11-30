@@ -18,12 +18,31 @@ I commented the API controller, but I didn't commented the route.
 8. Error fetching quotes: MongooseError: Operation `quotes.insertMany()` buffering timed out after 10000ms
 => Didn't connected to database
 
+9.00: steps to sign up for emails creds
+9.01 Enable 2fa auth
+9.02 Generate a app-password here https://myaccount.google.com/u/1/apppasswords
+9.03 use gmail and app-password for your nodemalier transport.
+example: 
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  pool: true, 
+  auth: {
+    user: process.env.ADMIN_EMAIL_BULK_SENDING,
+    pass: process.env.ADMIN_APP_PASSWORD
+  },
+});
+
+
 9. Invalid login: 535-5.7.8 Username and Password not accepted.
 
 Sof post: 
 https://stackoverflow.com/questions/59188483/error-invalid-login-535-5-7-8-username-and-password-not-accepted
 
-Google disabled less secure apps now so you need to setup Login with app password In summary you must setup your access with two factor authentication in order to allow the app password
+Google disabled less secure apps now so you need to setup Login with app password 
+In summary you must setup your access with two factor authentication in order to allow the app password
 
 transport: {
   host: 'smtp.gmail.com',
@@ -42,12 +61,14 @@ Ofcourse, only the users signed up (in quote sequence) can use the services
 10. Giving alias to email name:
 ...
 const mailOptions = {
-    from: `Motivation Quote <${process.env.ADMIN_EMAIL}>`,
+    from: `Motivation Quote <${process.env.ADMIN_EMAIL_BULK_SENDING}>`,
     to,
     subject,
     text
   };
 ...
+
+10.9: Test your email here: https://www.mail-tester.com/test-hrwq20l7i
 
 11. Giving wrong object field name when sending postman POST request
 - loginusernameoremail 
@@ -96,5 +117,27 @@ I still don't understand shits
 ...
 24. Chỉnh hết modal về Camel case.. Tại vì naming scheme nên chỉ để 1 kiểu chứ đừng thích như nào thì để
 
+25. Bài học rút ra: Khi tạo json để test cho API, hãy dùng hết tất cả các fields có thể, và nghĩ xem cách nó break.
 
+26. Thêm pool:true vào transport (email) khi thực hiện gửi email đồng loạt
 
+27. Handling csv data for array of object id example: "[""66bf5fb81b9df1e6398b2324"", ""66bf5fb81b9df1e6398b2382""]"
+
+28. Since I can only send 500 emails, so no scaling.
+
+29. But now I want it faster, Go figures
+
+30. Testing theses:
+  - Non existant emails => nothing happens
+  - Emails that are not from the gmail origin (only gmail and outlook) => outlook goes to spam, can still send to gmail
+  - 500 Emails (limits) => done
+
+31. JWT token when setting for one time use, needed to be saved somewhere (cached, or saved in server db). A short duration is never short enough.
+
+32. Redirecting using res.redirect must be a link with http or https
+
+33. Cannot set headers after they are sent to the client: Add return in .send line
+example:
+res.status(400).send({ error: "No quote found" });
+=> return res.status(400).send({ error: "No quote found" });
+      

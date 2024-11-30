@@ -5,7 +5,6 @@ import UpdateQuoteModal from "./UpdateQuoteModal";
 import DeleteQuoteModal from "./DeleteQuoteModal";
 
 function AllQuotesTable({ className, getFunction }) {
-  const dispatch = useDispatch();
 
   // Select quotes and loading state from the Redux store
   const { quotes, loading, error } = useSelector((state) => state.admin); // Adjust according to your state shape

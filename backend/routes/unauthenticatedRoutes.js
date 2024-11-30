@@ -16,5 +16,6 @@ router.get('/google/callback', unauthenticated.googleAuthCallback);
 
 router.get('/getQuoteList', unauthenticated.getQuoteList);
 
+router.post('/unsubscribeFromEmail', unauthenticated.unsubscribeFromEmailOneClick);
 
 module.exports = router;

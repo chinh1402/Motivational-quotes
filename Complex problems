@@ -17,5 +17,19 @@ This is, to me, complex things that I tried to solve when building this project
    4.2. Data is saved in database, there will be an mailServiceRunning boolean that's set to false (not sending email service yet). For current context, redirect to home
    4.3. User click the confirm button in email
    4.4. Button redirected user to homepage, then update mailServiceRunning boolean to true
-
 ==> 3 APIS: Send email - create quoteSequence - Toggle mailServiceRunning 
+
+5. Since emails sending can reach daily limit for free tiers, I use 2 different gmail account to handle emails (sorry gmails). One for handle bulk emails sending, one for other purposes.
+
+6. The logic for lastSendDay for email handling:
+- When either lastSendDay is reached, or the currentDay > length of array, send thankyou email
+- If user paused, when lastSendDay is reached, send thankyou
+- If user resume, refresh the lastSendDay with the remainder of the quotes (array.length - currentDay)
+
+7. To handle bulk emails, you need to handle the followings:
+- Configure the email provider (I use gmail smtp, nodemailer), gather as much needed data as possible (free tier is 500 msgs)
+<-> weird behavior that happened is one day I sent 1k1 emails
+- There are two type of mail connections, one is for opening a connection for each email, and other is using same connection for bulk email sending (pool: true)
+refer to:
+https://nodemailer.com/smtp/pooled/
+- Handle unsubscribe button on gmail (specifically) using list-Unsubscribe header and list-unsubscribe-post header for one-click unsubscribe, There's no data passing from gmail, so you have to implement your own req.query

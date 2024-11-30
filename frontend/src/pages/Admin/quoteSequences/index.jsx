@@ -12,9 +12,9 @@ import {
   getQuoteSequences,
   resetSuccess,
 } from "../../../redux/slices/adminQuoteSlices";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import SuccessToast from "../../../components/Custom/Toasts/SuccessToast";
-import ErrorToast from "../../../components/Custom/Toasts/ErrorToast";
 import AddQuoteSequencesModal from "./components/AddQuoteSequenceModal";
 
 const typeoptions = ["random", "daily"];
@@ -47,15 +47,15 @@ function QuoteSequence() {
   const [inputValue, setInputValue] = useState(""); // Holds the current input value
   const [debouncedValue, setDebouncedValue] = useState(""); // For debouncing input
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tagCheckbox, setTagCheckbox] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
 
   const searchQuery = {
     [queryMapping[selectedOption]]: debouncedValue,
   };
 
   useEffect(() => {
-    console.log(searchQuery)
+    console.log(searchQuery);
   }, [debouncedValue]);
 
   useEffect(() => {
@@ -86,17 +86,34 @@ function QuoteSequence() {
 
   useEffect(() => {
     // Dispatch the action with the search query
+    if (!tagCheckbox) {
+      searchQuery.tagQueryType = "matchAny";
+    }
     dispatch(getQuoteSequences(searchQuery));
-  }, [debouncedValue, selectedOption, dispatch]);
+  }, [debouncedValue, selectedOption, dispatch, tagCheckbox]);
 
   const renderInputByOption = () => {
     switch (selectedOption) {
       case "Tags":
         return (
-          <TagsInput
-            onChange={setInputValue}
-            className={"flex-grow"}
-          />
+          <>
+            <TagsInput
+              value={
+                inputValue ? inputValue.split(",").map((tag) => tag.trim()) : []
+              }
+              onChange={setInputValue}
+              className={"flex-grow"}
+            />
+            <span className="text-[1.3rem] text-[#000] dark:text-textColor-dark ml-[1.2rem]">
+              Match all?
+            </span>
+            <Checkbox
+              className="w-[1.6rem] h-[1.6rem] rounded-[2px] border-[#000] dark:border-textColor-dark ml-[8px]"
+              defaultChecked
+              onCheckedChange={(checked) => setTagCheckbox(checked)}
+              checked={tagCheckbox}
+            />
+          </>
         );
       case "Type":
         console.log("Custom shelect");
@@ -208,8 +225,6 @@ function QuoteSequence() {
         />
 
         {showSuccessToast && <SuccessToast message={toastMessage} />}
-
-        {showErrorToast && <ErrorToast message={error.error} />}
 
         <div className="relative bottom-[20px]">
           <DaisyUICustomToggle />

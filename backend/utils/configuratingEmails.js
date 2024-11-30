@@ -1,38 +1,38 @@
 const path = require("path");
 const fs = require("fs").promises;
-const sendEmail = require("../services/emailService");
+const sendEmail = require("../services/emailServiceOthers");
 const emailTemplates = require("../emailTemplates/emailTemplateMaps"); // Adjust the path accordingly
 require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 
 async function configuratingEmails(templateKey, queryParams = {}) {
   try {
-    const templateConfig = emailTemplates[templateKey];
+    const templateItem = emailTemplates[templateKey];
 
-    if (!templateConfig) {
+    if (!templateItem) {
       throw new Error(`Template with key "${templateKey}" not found.`);
     }
 
     const templatePath = path.join(
       __dirname,
-      templateConfig.templateRelativePath
+      templateItem.templateRelativePath
     );
-    const templateContent = await fs.readFile(templatePath, "utf8");
-
-    const isProduction = process.env.IS_PRODUCTION;
-    let newUrl = isProduction === "true" ? templateConfig.templateWebpathProduction : templateConfig.templateWebpathDev;
-
-    const subject = templateConfig.mailSubject;
+    
+    let newUrl = process.env.IS_PRODUCTION === "true" ? templateItem.templateWebpathProduction : templateItem.templateWebpathDev;
 
     const queryString = new URLSearchParams({ ...queryParams }).toString();
     newUrl += `?${queryString}`;
 
-    const updatedContent = templateContent.replace(
+    const templateContent = await fs.readFile(templatePath, "utf8");
+
+    const email = queryParams.email;
+    const emailSubject = templateItem.mailSubject;
+    const emailContent = templateContent.replace(
       "http://boilerplatecode.expectedtobereplaced",
       newUrl
     );
 
-    // Send the email with the updated template content
-    await sendEmail(queryParams.email, subject, updatedContent);
+    // Each email need: destination email, emailSubject (header), emailContent (content)
+    await sendEmail(email, emailSubject, emailContent);
   } catch (error) {
     console.error("Error sending email:", error);
     throw error; // Re-throw the error to handle it where the function is used

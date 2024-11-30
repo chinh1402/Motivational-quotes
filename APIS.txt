@@ -22,6 +22,7 @@ http://localhost:3000/api/authenticated/changePasswordConfirmed
 http://localhost:3000/api/authenticated/deleteSelfFromUser
 http://localhost:3000/api/authenticated/toggleEmailService
 http://localhost:3000/api/authenticated/getAllTagNames
+http://localhost:3000/api/authenticated/getAllQuotes
 
 Admin APIS:
 http://localhost:3000/api/admin/quotes?page=1&limit=20&tags=Wisdom,Philosophy 
@@ -38,11 +39,11 @@ http://localhost:3000/api/admin/users?email=ndch
 http://localhost:3000/api/admin/addUser
 http://localhost:3000/api/admin/updateUser
 http://localhost:3000/api/admin/deleteuser
+http://localhost:3000/api/admin/userfavorites?
+http://localhost:3000/api/admin/deletefavorite
 
 http://localhost:3000/api/admin/tags
 http://localhost:3000/api/admin/addTag
 http://localhost:3000/api/admin/updateTag
 http://localhost:3000/api/admin/deleteTag
-
-
 

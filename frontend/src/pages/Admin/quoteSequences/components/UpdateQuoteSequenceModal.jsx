@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateQuoteSequence } from "../../../../redux/slices/adminQuoteSlices";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
 import TagsInput from "../../../../components/Custom/TagsInput";
 import CustomSelect from "../../../../components/Custom/CustomSelect";
 import formatDateISOtoYYYYMMDD from "../utils/formatDateISOtoYYYYMMDD";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 const typeoptions = ["random", "daily"];
 const UpdateQuoteSequenceModal = ({ isOpen, onClose, quoteSequence }) => {
@@ -14,14 +18,32 @@ const UpdateQuoteSequenceModal = ({ isOpen, onClose, quoteSequence }) => {
   const [lastSendingDay, setLastSendingDay] = useState(formatDateISOtoYYYYMMDD(quoteSequence.lastSendingDay) || "");
   const [sequenceType, setSequenceType] = useState(quoteSequence.sequenceType === "random" ? typeoptions[0] : typeoptions[1]); // Holds the current input value
   const [mailServiceRunning, setmailServiceRunning] = useState(quoteSequence.mailServiceRunning || false);
+  const [tagCheckbox, setTagCheckbox] = useState(quoteSequence.tagQueryType === "matchAll" ? true : false);
 
   const [tags, setTags] = useState(quoteSequence.tagNames || "");
   const [errors, setErrors] = useState({});
+  const [showErrorToast, setShowErrorToast] = useState(false);
+
 
   const [submit, setSubmit] = useState(false)
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin); // Get loading and error from Redux state
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -134,7 +156,7 @@ const UpdateQuoteSequenceModal = ({ isOpen, onClose, quoteSequence }) => {
               Tags
             </label>
             <TagsInput
-              value={tags ? tags.split(",") : []}
+              value={tags ? tags.split(",").map(tag => tag.trim()) : []}
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setTags}
               required={errors.tags}
@@ -146,6 +168,17 @@ const UpdateQuoteSequenceModal = ({ isOpen, onClose, quoteSequence }) => {
                 {errors.tags}
               </span>
             ) : null}
+          </div>
+
+          <div className="flex">
+            <span className="text-[1.3rem] text-[#000] dark:text-textColor-dark">
+              Match all?
+            </span>
+            <Checkbox
+              className="w-[1.6rem] h-[1.6rem] rounded-[2px] border-[#000] dark:border-textColor-dark ml-[12px] cursor-default opacity-[50%]"
+              onCheckedChange={() => {}}
+              checked={tagCheckbox}
+            />
           </div>
 
           {/* Timezone Input */}
@@ -264,9 +297,7 @@ const UpdateQuoteSequenceModal = ({ isOpen, onClose, quoteSequence }) => {
 
           {/* Error Handling */}
           {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string" ? error : JSON.stringify(error)}
-            </p>
+            showErrorToast && <ErrorToast message={error.error} />
           )}
         </form>
 

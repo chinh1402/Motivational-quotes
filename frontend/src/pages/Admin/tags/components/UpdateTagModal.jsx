@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTag } from "../../../../redux/slices/adminQuoteSlices";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 import TagsInput from "../../../../components/Custom/TagsInput";
 
 // name, description, relatedTags, color, icon; name is required
@@ -11,11 +13,26 @@ const UpdateTagModal = ({ isOpen, onClose, tag }) => {
   const [relatedTags, setRelatedTags] = useState(tag.relatedTagsNames || "");
   const [color, setColor] = useState(tag.color || "");
   const [icon, setIcon] = useState(tag.icon || "");
-
   const [errors, setErrors] = useState({});
+  const [showErrorToast, setShowErrorToast] = useState(false);
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -158,7 +175,11 @@ const UpdateTagModal = ({ isOpen, onClose, tag }) => {
               Related Tags
             </label>
             <TagsInput
-              value={relatedTags ? relatedTags.split(",") : []}
+              value={
+                relatedTags
+                  ? relatedTags.split(",").map((tag) => tag.trim())
+                  : []
+              }
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setRelatedTags}
               onFocusErrorRemove={() => handleFocus("relatedTags")}
@@ -204,7 +225,10 @@ const UpdateTagModal = ({ isOpen, onClose, tag }) => {
               </span>
             </span>
 
-            <span className="mt-[12px] flex dark:text-textColor-dark">Example: #fff, rgba(229, 196, 115, 0.26), hsla(10, 100%, 50%, 0.5), blue</span>
+            <span className="mt-[12px] flex dark:text-textColor-dark">
+              Example: #fff, rgba(229, 196, 115, 0.26), hsla(10, 100%, 50%,
+              0.5), blue
+            </span>
           </div>
 
           <div>
@@ -242,11 +266,7 @@ const UpdateTagModal = ({ isOpen, onClose, tag }) => {
           </button>
 
           {/* Error Handling */}
-          {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string" ? error : JSON.stringify(error)}
-            </p>
-          )}
+          {error && showErrorToast && <ErrorToast message={error.error} />}
         </form>
 
         {/* Close button */}

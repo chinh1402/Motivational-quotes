@@ -4,8 +4,10 @@ const dailyEmailSending = require("./dailyEmailsSending");
 require("dotenv").config();
 
 const scheduleDailyEmails = () => {
-  const minute = "0"; // 0th minute of the hour
-  const hour = "5"; // 5 AM
+  // Since sending 500 emails takes 15 mins... This is a shitty kind of hard code but it kind of a workaround
+ 
+  const minute = "45"; // 45th minute of the hour
+  const hour = "4"; // 4 AM
   const dayOfMonth = "*"; // Every day of the month
   const month = "*"; // Every month
   const dayOfWeek = "*"; // Every day of the week

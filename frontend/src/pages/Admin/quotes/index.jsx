@@ -7,6 +7,7 @@ import CustomPagination from "../../../components/Custom/CustomPagination";
 
 import AllQuotesTable from "./components/AllQuotesTable";
 import TagsInput from "../../../components/Custom/TagsInput";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -15,7 +16,6 @@ import {
 } from "../../../redux/slices/adminQuoteSlices";
 
 import SuccessToast from "../../../components/Custom/Toasts/SuccessToast";
-import ErrorToast from "../../../components/Custom/Toasts/ErrorToast";
 
 import AddQuoteModal from "./components/AddQuoteModal";
 
@@ -31,8 +31,8 @@ function Quotes() {
   const [inputValue, setInputValue] = useState(""); // Holds the current input value
   const [debouncedValue, setDebouncedValue] = useState(""); // For debouncing input
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tagCheckbox, setTagCheckbox] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
 
   const queryMapping = {
     Author: "author",
@@ -61,7 +61,6 @@ function Quotes() {
   }, [success, dispatch]);
 
   useEffect(() => {
-    console.log(inputValue);
     const handler = setTimeout(() => {
       setDebouncedValue(inputValue);
     }, 1000);
@@ -74,17 +73,27 @@ function Quotes() {
 
   useEffect(() => {
     // Dispatch the action with the search query
+    if (!tagCheckbox) {
+      searchQuery.tagQueryType = "matchAny";
+    }
     dispatch(getQuotes(searchQuery));
-  }, [debouncedValue, selectedOption, dispatch]);
+  }, [debouncedValue, selectedOption, dispatch, tagCheckbox]);
 
   const renderInputByOption = () => {
     switch (selectedOption) {
       case "Tags":
         return (
-          <TagsInput
-            onChange={setInputValue}
-            className={"flex-grow"}
-          />
+          <>
+            <TagsInput
+              value={
+                inputValue ? inputValue.split(",").map((tag) => tag.trim()) : []
+              }
+              onChange={setInputValue}
+              className={"flex-grow"}
+            />
+            <span className="text-[1.3rem] text-[#000] dark:text-textColor-dark ml-[1.2rem]">Match all?</span>
+            <Checkbox className="w-[1.6rem] h-[1.6rem] rounded-[2px] border-[#000] dark:border-textColor-dark ml-[8px]" defaultChecked  onCheckedChange={(checked) => setTagCheckbox(checked)}  checked={tagCheckbox}/>
+          </>
         );
       case "QnID":
         return (
@@ -172,8 +181,6 @@ function Quotes() {
         />
 
         {showSuccessToast && <SuccessToast message={toastMessage} />}
-
-        {showErrorToast && <ErrorToast message={error.error} />}
 
         <div className="relative bottom-[20px]">
           <DaisyUICustomToggle />

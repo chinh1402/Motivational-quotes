@@ -99,6 +99,7 @@ exports.emailServiceSignup = async (req, res) => {
     email,
     sequenceType,
     tags,
+    tagQueryType,
     timezone,
     startSendingDay,
     lastSendingDay,
@@ -141,7 +142,7 @@ exports.emailServiceSignup = async (req, res) => {
     if (sequenceType === "daily") {
       // Fetch the Admin's daily sequence
       const dailySequence = await QuoteSequence.findOne({
-        email: process.env.ADMIN_EMAIL,
+        email: process.env.ADMIN_EMAIL_BULK_SENDING,
       });
       if (!dailySequence) {
         return res.status(404).send({
@@ -157,6 +158,7 @@ exports.emailServiceSignup = async (req, res) => {
         sequenceType,
         tags: dailySequence.tags,
         tagNames: dailySequence.tagNames,
+        tagQueryType: dailySequence.tagQueryType,
         currentDay: dailySequence.currentDay,
         startSendingDay: new Date(startSendingDay),
         lastSendingDay: new Date(lastSendingDay),
@@ -190,7 +192,7 @@ exports.emailServiceSignup = async (req, res) => {
 
       // Fetch possible quote IDs based on tags
       let possibleQuotesNumberId = await Quote.distinct("quoteNumberId", {
-        tags: { $in: tagIds },
+        tags: tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds },
         toolongforwebUI: false,
       });
 
@@ -211,6 +213,7 @@ exports.emailServiceSignup = async (req, res) => {
         sequenceType,
         tags: tagIds,
         tagNames: tags,
+        tagQueryType,
         timezone,
         startSendingDay: new Date(startSendingDay),
         lastSendingDay: new Date(lastSendingDay),
@@ -272,7 +275,10 @@ exports.updateAccountRequest = async (req, res) => {
 
     if (email) {
       // Check if email is already used by another user
-      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: req.user._id },
+      });
       if (existingUser) {
         return res.status(400).json({ error: "Email is already in use" });
       }
@@ -363,15 +369,18 @@ exports.updateAccountRequestConfirmed = async (req, res) => {
 
     if (updateData.email) {
       // Check if email is already used by another user
-      const email = updateData.email
-      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+      const email = updateData.email;
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: req.user._id },
+      });
       if (existingUser) {
         return res.status(400).json({ error: "Email is already in use" });
       }
       userWithUpdateRequest.email = updateData.email;
     }
     if (updateData.username) {
-      const username = updateData.username
+      const username = updateData.username;
       const existingUser = await User.findOne({
         username,
         _id: { $ne: req.user._id },
@@ -639,17 +648,29 @@ exports.toggleEmailService = async (req, res) => {
           "Unauthorized. If you read this, you're probably using Postman. Ask the administrator for an account.",
       });
     }
-    console.log(req.user);
     const quoteSequence = await QuoteSequence.findOne({
       email: req.user.email,
     });
     if (!quoteSequence) {
       return res.status(404).json({ error: "Quote Sequence not found" });
     }
+
+    // only when turning mail service on, change the date
+
+    if (!quoteSequence.mailServiceRunning) {
+      const remainingDays = quoteSequence.quoteSequence.length - quoteSequence.currentDay;
+      const lastSendingDay = new Date();
+      lastSendingDay.setDate(lastSendingDay.getDate() + remainingDays);
+
+      quoteSequence.lastSendingDay = lastSendingDay
+    }
+
     quoteSequence.mailServiceRunning = !quoteSequence.mailServiceRunning;
     await quoteSequence.save();
     res.status(200).json({
-      message: `Email service ${quoteSequence.mailServiceRunning ? "on" : "off"}`,
+      message: `Email service ${
+        quoteSequence.mailServiceRunning ? "on" : "off"
+      }`,
     });
   } catch (error) {
     console.log(error);
@@ -657,7 +678,7 @@ exports.toggleEmailService = async (req, res) => {
   }
 };
 
-exports.getAllTagNames = async (req,res) => {
+exports.getAllTagNames = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -668,8 +689,66 @@ exports.getAllTagNames = async (req,res) => {
 
     const tagNames = await Tag.distinct("name");
     res.status(200).json(tagNames);
-  } catch(error) {
-    console.log(error)
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+exports.getAllQuotes = async (req, res) => {
+  const {
+    page = 1,
+    limit = 20,
+    content,
+    author,
+    quoteNumberId,
+    tags,
+    tagQueryType,
+  } = req.query;
+  try {
+    // Construct the search query
+    let searchQuery = {};
+    if (content) {
+      searchQuery.content = { $regex: content, $options: "i" }; // Case-insensitive search
+    }
+    if (author) {
+      searchQuery.author = { $regex: author, $options: "i" }; // Case-insensitive search
+    }
+    if (quoteNumberId) {
+      searchQuery.quoteNumberId = { $regex: quoteNumberId, $options: "i" }; // Exact match for quoteNumberId
+    }
+    // tags is string
+    if (tags) {
+      const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
+      const tagObjects = await Tag.find({ name: { $in: tagsArray } });
+      const tagIds = tagObjects.map((tag) => tag._id);
+      searchQuery.tags =
+        tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds };
+    }
+
+    // Fetch quotes with pagination and search
+    const quotes = await Quote.find(searchQuery)
+      .skip((page - 1) * limit) // Skip items for the current page
+      .limit(limit); // Limit the number of items per page
+
+    // Get the total number of quotes matching the search query to calculate total pages
+    const totalQuotes = await Quote.countDocuments(searchQuery);
+
+    // Calculate total number of pages
+    const totalPages = Math.ceil(totalQuotes / limit);
+
+    // Send response with pagination details
+    res.json({
+      quotes,
+      pagination: {
+        totalQuotes,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Error fetching quotes" });
+  }
+};

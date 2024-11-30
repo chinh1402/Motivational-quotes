@@ -5,6 +5,7 @@ import AdminHeader from "../../../components/Admin/AdminHeader";
 import AdminSidebar from "../../../components/Admin/AdminSidebar";
 import CustomPagination from "../../../components/Custom/CustomPagination";
 import AllTagsTable from "./components/AllTagsTable";
+import { Checkbox } from "@/components/ui/checkbox";
 import TagsInput from "../../../components/Custom/TagsInput";
 
 import { useDispatch, useSelector } from "react-redux";
@@ -20,14 +21,14 @@ import AddTagModal from "./components/AddTagModal";
 const selectOptions = [
   "Name",
   "Description",
-  "Related tags",
+  "Relate tag",
   "Color"
 ];
 
 const queryMapping = {
   "Name": "name",
   "Description": "description",
-  "Related tags": "relatedTags",
+  "Relate tag": "relatedTags",
   "Color": "color"
 };
 
@@ -41,7 +42,7 @@ function Tag() {
   const [debouncedValue, setDebouncedValue] = useState(""); // For debouncing input
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [tagCheckbox, setTagCheckbox] = useState(true);
 
   const searchQuery = {
     [queryMapping[selectedOption]]: debouncedValue,
@@ -75,17 +76,32 @@ function Tag() {
 
   useEffect(() => {
     // Dispatch the action with the search query
+    if (!tagCheckbox) {
+      searchQuery.tagQueryType = "matchAny";
+    }
     dispatch(getTags(searchQuery));
-  }, [debouncedValue, selectedOption, dispatch]);
+  }, [debouncedValue, selectedOption, dispatch, tagCheckbox]);
 
   const renderInputByOption = () => {
     switch (selectedOption) {
-      case "Related tags":
+      case "Relate tag":
         return (
+          <>
           <TagsInput
+            value={inputValue ? inputValue.split(",").map(tag => tag.trim()) : []}
             onChange={setInputValue}
             className={"flex-grow"}
           />
+           <span className="text-[1.3rem] text-[#000] dark:text-textColor-dark ml-[1.2rem]">
+              Match all?
+            </span>
+            <Checkbox
+              className="w-[1.6rem] h-[1.6rem] rounded-[2px] border-[#000] dark:border-textColor-dark ml-[8px]"
+              defaultChecked
+              onCheckedChange={(checked) => setTagCheckbox(checked)}
+              checked={tagCheckbox}
+            />
+          </>
         );
       default:
         return (
@@ -164,8 +180,6 @@ function Tag() {
         />
 
         {showSuccessToast && <SuccessToast message={toastMessage} />}
-
-        {showErrorToast && <ErrorToast message={error.error} />}
 
         <div className="relative bottom-[20px]">
           <DaisyUICustomToggle />

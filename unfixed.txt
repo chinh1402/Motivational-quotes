@@ -26,5 +26,25 @@ http://localhost:3000/api/admin/quote/update
 
 9. TagInput có 1 bug khá tai hại. Tại vì phải cập nhật value và mỗi khi cập nhật value thì set lại state cho parent, mà khi set lại state
 cho parent thì value lại được cập nhật lại. Nên Adding Quotesequence + Updating TagInput đang bị bug. 
+=> Khi không phải truyền vào value cho TagInput thì dùng bình thường. Nếu tác vụ phải truyền vào value thì sẽ bug
+=> Nên fix nếu về sau muốn dùng để scale
+
+==> fixed
+
+10. When user halt their mail system, when the system goes pass a certain due date (last sending day), it gonna expires, and send thankyou email.
+=> Fixed by resetting the date when user turn on their email service again
+
+11. This is actually an unfixable problem
+=> On admin gmail side, all 500 emails are sent
+=> While that happens, on client side, small batch of mails being sent. It was processing from 10:15. It's now finished sending at: 
+now at 10:30, it sent 468 emails, then stopped for 3 mins
+at 10:34, it finished sending the rest
+
+12. For unsubscribing
+'List-Unsubscribe': `<https://c9ec-42-1-77-123.ngrok-free.app/api/unsubscribeFromEmail?email=${to}>`,
+Change that to a frontend Endpoint that call the api rather than just pasting this api here
+
+13. Security issue
+=> Other people can just post onto my list Unsubscribe API if they somehow found it. Have no idea how to fix. Can anyone give me suggestions
 
 

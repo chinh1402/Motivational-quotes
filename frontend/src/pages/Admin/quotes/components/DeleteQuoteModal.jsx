@@ -1,10 +1,28 @@
-import React from "react";
+import React, { useState, useEffect }  from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteQuote } from "../../../../redux/slices/adminQuoteSlices"; // Assuming you have a deleteQuote action
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 
 const DeleteQuoteModal = ({ isOpen, onClose, quoteNumberId }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin); // Get loading and error from Redux state
+  const [showErrorToast, setShowErrorToast] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const handleDelete = async () => {
     try {
@@ -48,10 +66,8 @@ const DeleteQuoteModal = ({ isOpen, onClose, quoteNumberId }) => {
 
         {/* Error Handling */}
         {error && (
-          <p className="text-red-900 text-[13px] mt-4 text-center break-words">
-            {typeof error === "string" ? error : JSON.stringify(error)}
-          </p>
-        )}
+            showErrorToast && <ErrorToast message={error.error} />
+          )}
 
         {/* Close button */}
         <button

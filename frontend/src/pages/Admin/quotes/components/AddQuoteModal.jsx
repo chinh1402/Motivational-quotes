@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addQuote } from "../../../../redux/slices/adminQuoteSlices";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 import TagsInput from "../../../../components/Custom/TagsInput";
 
 const AddQuoteModal = ({ isOpen, onClose }) => {
@@ -11,6 +13,22 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin); // Get loading and error from Redux state
+  const [showErrorToast, setShowErrorToast] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -52,35 +70,47 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
         <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
           {/* Author Input */}
           <div>
-            <label className="block text-[1.3rem] font-medium dark:text-textColor-dark">Author</label>
+            <label className="block text-[1.3rem] font-medium dark:text-textColor-dark">
+              Author
+            </label>
             <input
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               className={`w-full border-2 px-3 py-2 mt-1 rounded-md focus:outline-none dark:bg-[#333] dark:outline-none dark:border-[transparent] dark:text-textColor-dark ${
-                errors.author ? "border-red-900 dark:border-primary-dark" : "border-gray-300"
+                errors.author
+                  ? "border-red-900 dark:border-primary-dark"
+                  : "border-gray-300"
               }`}
               onFocus={() => handleFocus("author")}
             />
             {errors.author && (
-              <span className="text-red-900 text-sm dark:text-primary-dark">{errors.author}</span>
+              <span className="text-red-900 text-sm dark:text-primary-dark">
+                {errors.author}
+              </span>
             )}
           </div>
 
           {/* Content Input */}
           <div>
-            <label className="block text-[1.3rem] font-medium dark:text-textColor-dark">Content</label>
+            <label className="block text-[1.3rem] font-medium dark:text-textColor-dark">
+              Content
+            </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className={`w-full border-2 px-3 py-2 mt-1 rounded-md focus:outline-none dark:bg-[#333] dark:outline-none dark:border-[transparent] dark:text-textColor-dark ${
-                errors.content ? "border-red-900 dark:border-primary-dark" : "border-gray-300"
+                errors.content
+                  ? "border-red-900 dark:border-primary-dark"
+                  : "border-gray-300"
               }`}
               onFocus={() => handleFocus("content")}
               rows="3"
             />
             {errors.content && (
-              <span className="text-red-900 text-sm dark:text-primary-dark">{errors.content}</span>
+              <span className="text-red-900 text-sm dark:text-primary-dark">
+                {errors.content}
+              </span>
             )}
           </div>
 
@@ -90,13 +120,16 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
               Tags
             </label>
             <TagsInput
+              value={tags ? tags.split(",").map((tag) => tag.trim()) : []}
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setTags}
               onFocusErrorRemove={() => handleFocus("tags")}
               required={errors.tags}
             />
             {errors.tags ? (
-              <span className="text-red-900 text-sm dark:text-primary-dark">{errors.tags}</span>
+              <span className="text-red-900 text-sm dark:text-primary-dark">
+                {errors.tags}
+              </span>
             ) : null}
           </div>
 
@@ -110,13 +143,17 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
           </button>
 
           {/* Error Handling */}
-          {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string"
-                ? error
-                : JSON.stringify(error) || JSON.stringify(error)}
-            </p>
-          )}
+          {error &&
+            (error.error === "A similar quote already exists"
+              ? showErrorToast && (
+                  <ErrorToast
+                    message={
+                      error.error +
+                      ` with id ${error.similarQuote.quoteNumberId}`
+                    }
+                  />
+                )
+              : showErrorToast && <ErrorToast message={error.error} />)}
         </form>
 
         {/* Close button */}

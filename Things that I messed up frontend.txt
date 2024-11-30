@@ -119,3 +119,64 @@ in forms, any button that doesn't declared its type is defaulted to submit....
 Handle tags CRUD and Users CRUD 
 
 There's no error handling on frontend when receiving error
+
+7/10
+
+You learnt something
+
+If you pass in an array in useEffect dependency, it gonna cause a loop to happen.
+
+=> so the workaround is to JSON.stringify the array
+=> Clever, right?
+https://stackoverflow.com/questions/59467758/passing-array-to-useeffect-dependency-list#:~:text=How%20do%20I%20prevent%20useEffect%20from%20getting%20into%20infinity%20loop
+
+8/10
+Importing svg is a bit different than usual html
+
+import XIcon from "../../../assets/HamburgerMenuClose_icon.svg";
+<Menu customBurgerIcon={<img src={HamburgerIcon} alt="Menu Icon" />}>
+
+Help using phone to connect:
+https://dev.to/bhendi/how-to-open-your-vite-dev-server-on-your-mobile-k1k#:~:text=By%20default,%20the%20Vite%20dev%20server%20binds%20to%20localhost%20only,
+
+adding -host onto your npm run dev
+
+26/11
+Why don't I use variable to store the hard coded value in this?
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
+
+Reason: Toast has its own functionality implemented, which also has a setTimeout. And that's kind of bad for a custom component
+
+30/11: Trying to implement shadcn on javascript, making use of this tutorial:
+https://www.youtube.com/watch?v=gXSC5eMw68o
+
+Implementing it simply just by creating a new jsconfig.json, then paste this in:
+
+{
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./src/*"]
+      }
+    }
+  }
+
+Also shadcn does override some stuff in tailwind.config.js. In my case it was 
+darkMode: ["class"] >> darkMode: ["class", "class"]
+
+Changed it back
+

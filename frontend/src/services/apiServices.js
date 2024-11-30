@@ -53,6 +53,8 @@ const adminAPI = {
   getUsers: (params) => api.get(`${API_URL_ADMIN}/users`, { params }),
   addUser: (data) => api.post(`${API_URL_ADMIN}/addUser`, data),
   updateUser: (data) => api.put(`${API_URL_ADMIN}/updateUser`, data),
+  userfavorites: (params) => api.get(`${API_URL_ADMIN}/userfavorites`, { params }),
+  deletefavorite: (data) => api.delete(`${API_URL_ADMIN}/deletefavorite`, data),
   deleteUser: (_id) => api.delete(`${API_URL_ADMIN}/deleteUser`, { data: { _id } }),
 
   getTags: (params) => api.get(`${API_URL_ADMIN}/tags`, { params }),

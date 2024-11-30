@@ -3,14 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../../../../redux/slices/adminQuoteSlices";
 import CustomSelect from "../../../../components/Custom/CustomSelect";
 import formatDateISOtoYYYYMMDD from "../utils/formatDateISOtoYYYYMMDD";
+import UserFavoritesModal from "./userFavorite/index";
+
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 
 const genderOptionsDisplayValue = ["Male", "Female", "Other"];
 const genderOptions = [0, 1, 2];
 const roleOptions = [0, 1, 2];
 const roleOptionsDisplayValue = ["User", "Donator", "Admin"];
 
-const AddUsersModal = ({ isOpen, onClose, user }) => {
-  const [id, setId] = useState(user._id || "");
+const UpdateUsersModal = ({ isOpen, onClose, user }) => {
   const [username, setUsername] = useState(user.username || "");
   const [email, setEmail] = useState(user.email || "");
   const [password, setPassword] = useState("");
@@ -30,17 +33,31 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
     formatDateISOtoYYYYMMDD(user.birthDate) || ""
   );
 
-  // comparing to undefined because user.gender / role can be 0 => falsy value.
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [isUserfavoritesModalOpen, setIsUserfavoritesModalOpen] = useState(false);
 
-  useEffect(() => {
-    console.log(user);
-  }, [gender, role]);
+  // comparing to undefined because user.gender / role can be 0 => falsy value.
   // cant change password, timezone, id
 
   const [errors, setErrors] = useState({});
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -100,11 +117,27 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
     onClose();
   };
 
+  const handleUserFavoritesClick = () => {
+    setIsUserfavoritesModalOpen(true);
+  };
+
+  const closeUserFavoritesModal = () => {
+    setIsUserfavoritesModalOpen(false);
+  };
+
   if (!isOpen) return null; // Don't render the modal if it's not open
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 scroll">
       <div className="bg-pageBg-light dark:bg-pageBg-dark w-[400px] px-[20px] pt-[20px] pb-[40px]  rounded-lg shadow-lg relative overflow-y-auto max-h-[80vh]">
+      {isUserfavoritesModalOpen && (
+        <UserFavoritesModal
+          onClose={closeUserFavoritesModal} // Pass close function to the modal
+          user_id={user._id}
+          isOpen={isUserfavoritesModalOpen}
+        />
+      )}
+        
         <h2 className="text-[2rem] font-medium text-center mb-4 dark:text-textColor-dark ">
           Update a User
         </h2>
@@ -123,8 +156,7 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
                      ? "border-red-900 dark:border-primary-dark"
                      : "border-gray-300"
                  }`}
-              value={id}
-              onInput={(e) => setId(e.target.value)}
+              value={user._id}
               onFocus={() => handleFocus("id")}
               readOnly
             />
@@ -425,6 +457,20 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
             )}
           </div>
 
+          <div className="flex">
+            <label className="block text-[1.3rem] font-medium dark:text-textColor-dark">
+              Favorite quotes
+            </label>
+
+            <span className="text-[1.3rem] text-primary-light ml-[12px] cursor-pointer" onClick={() => handleUserFavoritesClick()}>See the list of favorite quotes</span>
+
+            {errors.avatarURL && (
+              <span className="text-red-900 text-sm dark:text-primary-dark">
+                {errors.avatarURL}
+              </span>
+            )}
+          </div>
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -436,9 +482,7 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
 
           {/* Error Handling */}
           {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string" ? error : JSON.stringify(error)}
-            </p>
+            showErrorToast && <ErrorToast message={error.error} />
           )}
         </form>
 
@@ -454,4 +498,4 @@ const AddUsersModal = ({ isOpen, onClose, user }) => {
   );
 };
 
-export default AddUsersModal;
+export default UpdateUsersModal;

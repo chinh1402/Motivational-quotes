@@ -118,6 +118,9 @@ http://localhost:3000/api/authenticated/emailUnsubscribe x
 GET
 http://localhost:3000/api/authenticated/getAllTagNames x
 
+GET
+http://localhost:3000/api/authenticated/getAllQuotes?page=1&limit=20&tags=Wisdom,Philosophy x
+
 Admin APIS:
 QUOTE
 
@@ -158,9 +161,10 @@ http://localhost:3000/api/admin/createQuoteSequence x
     "email": "testacc1@gmail.com",
     "sequenceType": "random",
     "tags": "Wisdom, Philosophy",
+    "tagQueryType": "matchAny",
     "timezone": "UTC",
     "startSendingDay":"2024-08-15",
-    "lastSendingDay": "2024-08-16",
+    "lastSendingDay": "2025-12-16",
     "sendAt": "05:00"
 }
 
@@ -234,3 +238,17 @@ http://localhost:3000/api/admin/deleteTag x
 {
     "_id": "66bfedbff2670083db576c98"
 }
+
+GET
+http://localhost:3000/api/admin/userfavorites?_id=66992c50d2d37d4a8ed25f5d x
+{
+    "_id": "66bfedbff2670083db576c98"
+}
+
+DELETE
+http://localhost:3000/api/admin/deletefavorite x
+{
+    "quoteNumberId": 1,
+    "user_id": "66bfedbff2670083db576c98",
+}
+

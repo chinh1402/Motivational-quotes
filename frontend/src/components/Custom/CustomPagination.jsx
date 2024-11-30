@@ -54,6 +54,7 @@ function CustomPagination({ className, pagination, getFunction, searchQuery }) {
   const pages = generatePages();
 
   const handlePagination = (page) => {
+    if (page < 1 || page > totalPages) return; // Ensure page is not less than 1
     dispatch(getFunction({ page: page, ...searchQuery }));
   };
 
@@ -61,12 +62,12 @@ function CustomPagination({ className, pagination, getFunction, searchQuery }) {
     <div className={`flex justify-between ${className}`}>
       <button
         className={`px-2 py-1 flex ${
-          currentPage === 1
+          Number(currentPage) === 1
             ? "opacity-50 cursor-not-allowed disabled:text-textColor-dark"
             : "text-primary-light dark:text-primary-dark"
         }`}
-        disabled={currentPage === 1}
-        onClick={() => handlePagination(currentPage - 1)}
+        disabled={Number(currentPage) === 1}
+        onClick={() => handlePagination(Number(currentPage) - 1)}
       >
         <svg
           clipRule="evenodd"
@@ -95,7 +96,7 @@ function CustomPagination({ className, pagination, getFunction, searchQuery }) {
                 to="#"
                 className={`px-3 py-1 rounded transition-colors duration-200
           ${
-            page == currentPage
+            page === Number(currentPage)
               ? "text-primary-light dark:text-primary-dark"
               : "text-[#000] dark:text-textColor-dark"
           }`}
@@ -112,12 +113,12 @@ function CustomPagination({ className, pagination, getFunction, searchQuery }) {
 
       <button
         className={`px-2 py-1 flex ${
-          currentPage === totalPages
+          Number(currentPage) === totalPages
             ? "opacity-50 cursor-not-allowed disabled:text-textColor-dark"
             : "text-primary-light dark:text-primary-dark"
         }`}
-        disabled={currentPage === totalPages}
-        onClick={() => handlePagination(currentPage + 1)}
+        disabled={Number(currentPage) === totalPages}
+        onClick={() => handlePagination(Number(currentPage) + 1)}
       >
         Next page
         <svg

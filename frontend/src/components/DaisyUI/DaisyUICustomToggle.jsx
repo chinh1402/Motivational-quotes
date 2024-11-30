@@ -1,10 +1,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setNightMode } from '../../redux/slices/adminQuoteSlices'; 
+import { setNightMode } from '../../redux/slices/pageSettingSlices'; 
 
 function DaisyUIToggle() {
   const dispatch = useDispatch();
-  const nightMode = useSelector((state) => state.admin.nightMode);
+  const nightMode = useSelector((state) => state.pageSetting.nightMode);
 
   const handleToggleChange = (e) => {
     dispatch(setNightMode(e.target.checked)); // Dispatch toggle state to Redux

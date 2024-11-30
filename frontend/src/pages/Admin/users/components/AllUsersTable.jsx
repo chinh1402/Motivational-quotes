@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import formatDate from "../utils/formatDate";
 import UpdateUsersModal from "./UpdateUsersModal";
 import DeleteUsersModal from "./DeleteUsersModal";
@@ -7,8 +7,6 @@ import displayGender from "../utils/displayGender";
 import displayRole from "../utils/displayRole";
 
 function AllUsersTable({ className }) {
-  const dispatch = useDispatch();
-
   // Select quotes and loading state from the Redux store
   const { users, loading, error } = useSelector(
     (state) => state.admin

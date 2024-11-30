@@ -2,11 +2,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAPI } from "../../services/apiServices";
 
-const getInitialNightMode = () => {
-  const savedNightMode = localStorage.getItem("nightMode");
-  return savedNightMode ? JSON.parse(savedNightMode) : false; // Default to false if not found
-};
-
 // Async actions using redux-thunk
 export const getQuotes = createAsyncThunk(
   "admin/getQuotes",
@@ -119,6 +114,30 @@ export const getUsers = createAsyncThunk(
   }
 );
 
+export const getUserfavorites = createAsyncThunk(
+  "admin/userfavorites",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await adminAPI.userfavorites(userData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const deleteUserFavorite = createAsyncThunk(
+  "admin/deletefavorite",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await adminAPI.deletefavorite(userData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const addUser = createAsyncThunk(
   "admin/addUser",
   async (userData, { rejectWithValue }) => {
@@ -207,14 +226,14 @@ export const deleteTag = createAsyncThunk(
 // Initial state for the slice
 const initialState = {
   quotes: [],
+  userFavorites: [],
   quoteSequences: [],
   users: [],
   tags: [],
   loading: false,
-  error: null,
+  error: false,
   success: false, // Add success state
   toastMessage: "",
-  nightMode: getInitialNightMode(), // New toggle state
 };
 
 // Admin slice
@@ -225,9 +244,8 @@ const adminSlice = createSlice({
     resetSuccess: (state) => {
       state.success = false; // Reset success state
     },
-    setNightMode: (state, action) => {
-      state.nightMode = action.payload; // Update the toggle state
-      localStorage.setItem("nightMode", JSON.stringify(action.payload));
+    resetError: (state) => {
+      state.error = false; // Reset success state
     },
   },
   extraReducers: (builder) => {
@@ -311,6 +329,7 @@ const adminSlice = createSlice({
       .addCase(getQuoteSequences.fulfilled, (state, action) => {
         state.loading = false;
         state.quoteSequences = action.payload.quoteSequences; // Assuming payload contains quote sequences
+        console.log(action.payload);
         state.pagination = action.payload.pagination;
       })
       .addCase(getQuoteSequences.rejected, (state, action) => {
@@ -486,6 +505,37 @@ const adminSlice = createSlice({
         state.error = action.payload || "Failed to update tag";
       })
 
+      .addCase(getUserfavorites.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getUserfavorites.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userFavorites = action.payload.userFavorites; // Assuming payload contains tags
+        state.paginationForUserFavorite = action.payload.pagination;
+        console.log(state.paginationForUserFavorite)
+      })
+      .addCase(getUserfavorites.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to get user favorites";
+      })
+
+      .addCase(deleteUserFavorite.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteUserFavorite.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.toastMessage = "Quote deleted successfully";
+        const deletedQuote = action.meta.arg.quoteNumberId;
+        state.userFavorites = state.userFavorites.filter((q) => q.quoteNumberId !== deletedQuote);
+      })
+      .addCase(deleteUserFavorite.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to delete user favorite";
+      })
+
       .addCase(deleteTag.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -504,6 +554,6 @@ const adminSlice = createSlice({
   },
 });
 
-export const { resetSuccess, setNightMode } = adminSlice.actions;
+export const { resetError, resetSuccess, setNightMode } = adminSlice.actions;
 
 export default adminSlice.reducer;

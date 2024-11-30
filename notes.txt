@@ -26,7 +26,7 @@ set up setting for daily
 http://localhost:3000/api/admin/createQuoteSequence
 
 {
-    "email": "process.env.ADMIN_EMAIL",
+    "email": "process.env.ADMIN_EMAIL_BULK_SENDING",
     "sequenceType": "random",
     "tags": "Motivational, Success, Wisdom",
     "timezone": "UTC",
@@ -37,3 +37,4 @@ http://localhost:3000/api/admin/createQuoteSequence
 
 CTA button href 
 http://boilerplatecode.expectedtobereplaced
+

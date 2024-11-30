@@ -18,6 +18,7 @@ router.post('/changePasswordVerifyToken', authenticated.changePasswordVerifyToke
 router.post('/changePasswordConfirmed', authenticated.changePasswordConfirmed);
 router.delete('/deleteSelfFromUser', authenticated.deleteSelfFromUser);
 router.post('/toggleEmailService', authenticated.toggleEmailService);
+router.get('/getAllQuotes', authenticated.getAllQuotes);
 router.get('/getAllTagNames', authenticated.getAllTagNames);
 
 

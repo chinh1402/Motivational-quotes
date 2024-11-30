@@ -382,7 +382,100 @@ Gender, date search query doesn't work, fix that
 
 Configure delete and update
 
+7/10:
 
-Write favorite quote admin api for specified user (can be delayed)
+Write an actual plan looking at the UI what you need to steamline the UI building process. An actual plan.
+Move dark mode to another store
+
+Write favorite quote admin api for specified user (can be delayed after user has favorited something)
 (before building the user UI)
 Write the backend for authenticated => getAllQuotes..
+
+=> done writing APIs
+
+
+next up on the list, is unauthenticated pages. This included:
+-> home
+-> get-random-quote
+
+
+Remember that admin get redirected to admin panel
+
+8/10
+test that hamburger
+
+
+=============================================================
+
+Quên tài khoản nữa :(
+Backend:
+0. Adding share quote functionality
+1. Fix the tag query when get tags (it's using $in right now)
+2. Adding languages onto quotes (for now, adding vn).
+3. Adding message queue to handle mass email sending
+4. Adding AI asking backend functionality
+
+Frontend:
+1. Making Vietnamese language frontend templates alongside with english templates
+2. Adding a simple AI asking mechanism for quotes meaning 
+
+8/11/2024
+=> Học grid, và viết lại login bằng grid. Tại sao lại là grid thì là để viết res bằng tailwind
+
+=> Vẽ lại hết UI cho mobile phần user để đảm nhiệm thêm các chức năng:
+0. Vẽ lại UI cho Tag query logic => user, admin
+
+=> Những phần phải thêm checkbox cho tag input:
+- Quote tag search query ==> done
+- Frontend user search query ==> done
+- Quote Sequences tag search query ==> done
+- Tags related tag search query ==> done
+=> Những phần phải thêm field Tag option (tag query type) (all / each)
+- Quote sequence table => done
+- Tag table => done
+
+=> Backend maybe phải thay đổi:
+- Thêm tag tagQueryType field vào quoteSequence db model ==> done
+- Quote tag search logic / getAllQuotes (auth) + getQuotes (admin) ==> done
+task fe
+===> Thêm tagQueryType cho checkbox
+
+- QuoteSequence search logic (Thêm 1 field nữa trên frontend cho tagQueryTypeOnly) ==> done
+task fe
+===> Thêm tagQueryType cho checkbox, tagQueryTypeOnly cho field mới ở search của quoteSequence
+
+
+- QuoteSequence add logic (test cho cả daily và random) => done
+- Related tags search logic => done
+- Ng đăng kí quote sequence (authenticated api) => done
+- All quote user frontend logic (sửa giống quote tag search logic) => done
+
+
+===> Build tiếp UI và deploy... Tại vì thực sự cần 1 code base dễ scale hơn để viết những cái dưới. Làm requirement fail nên fix đi fix lại rất tốn tg
+Cố vẽ lại UI xem có scale được k, giờ dùng shadcn rồi
+
+task design
+0.5. Vẽ UI cho share to facebook => Done
+
+1. Sửa backend cho email để handle scaling khi có nhiều mail => backend 
+
+Task: revoke 2fa from job.ndchinh2003@gmail.com, then create a new email to handle only utilities stuff (not using pool)
+
+==================================
+Future planning:
+
+1. Chuyển đổi ngôn ngữ trang web (chỉ support eng và viet) => user
+2. Chức năng thêm các ngôn ngữ khác cho câu trích dẫn (hiện tại chỉ support cho eng, viet, và extend được) => Admin
+3. Chức năng thêm gợi ý cách dịch cho câu trích dẫn cho một ngôn ngữ khác => donator
+4. Hỏi AI về câu trích dẫn (prompt nội dung, để người dùng truyền thêm nội dung field country vào, mặc định sẽ là country của người dùng) => user tự nhập api key
+5. Chức năng hẹn lịch, đặt mục tiêu, xây dựng mục tiêu, và gửi những câu cảm hứng cho người dùng theo mục tiêu đã được xây dựng bằng AI => donator (xem có cách nào k phải tự nhập api key k)
+6. Chức năng share câu trích dẫn => user
+7. Chức năng survey ticket (cái này sẽ ít người dùng, nhưng rất cần để về sau scale) => Nếu tiến độ dự án thuận lợi, thì làm => user, admin
+8. Làm 1 cái UI nhỏ Buy me a coffee => user
+(Sau khi vẽ, xem xét backend sẽ xử lý dữ liệu như nào trước, có logic gì đặc thù không, rồi mới viết API. Sau đó mới thực hiện triển khai trên front)
+
+db.quotesequences.deleteMany({email: "ndchinh2003@gmail.com"})
+
+25/11:
+Finish configuring error toast for quote sequence, users, tags.
+

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateQuote } from "../../../../redux/slices/adminQuoteSlices";
 import TagsInput from "../../../../components/Custom/TagsInput";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 
 const UpdateQuoteModal = ({ isOpen, onClose, quote }) => {
   const [quoteNumberId, setQuoteNumberId] = useState(quote.quoteNumberId || "");
@@ -10,6 +12,7 @@ const UpdateQuoteModal = ({ isOpen, onClose, quote }) => {
   const [tags, setTags] = useState(quote.tagNames || "");
   const [override, setOverride] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showErrorToast, setShowErrorToast] = useState(false);
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin);
@@ -22,6 +25,21 @@ const UpdateQuoteModal = ({ isOpen, onClose, quote }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,7 +123,7 @@ const UpdateQuoteModal = ({ isOpen, onClose, quote }) => {
               Tags
             </label>
             <TagsInput
-              value={tags ? tags.split(",") : []}
+              value={tags ? tags.split(",").map(tag => tag.trim()) : []}
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setTags}
               onFocusErrorRemove={() => handleFocus("tags")}
@@ -144,11 +162,11 @@ const UpdateQuoteModal = ({ isOpen, onClose, quote }) => {
 
           {/* Error Handling */}
           {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words">
-              {typeof error === "string"
-                ? error
-                : JSON.stringify(error) || "An error occurred"}
-            </p>
+            error.error === "A similar quote already exists" 
+            ? 
+            showErrorToast && <ErrorToast message={error.error + ` with id ${error.similarQuote.quoteNumberId}`} />
+            :
+            showErrorToast && <ErrorToast message={error.error} />
           )}
         </form>
 

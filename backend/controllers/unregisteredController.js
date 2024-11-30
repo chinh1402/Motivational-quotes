@@ -4,6 +4,8 @@ const passport = require("passport");
 const Quote = require("../models/quote");
 const Tag = require("../models/tag");
 const crypto = require("crypto");
+const QuoteSequence = require("../models/quoteSequence");
+const jwt = require('jsonwebtoken');
 const configuratingEmails = require("../utils/configuratingEmails");
 require("dotenv").config();
 
@@ -143,23 +145,23 @@ exports.googleAuth = passport.authenticate("google", {
 exports.googleAuthCallback = (req, res, next) => {
   passport.authenticate(
     "google",
-    { failureRedirect: "/login" },
+    { failureRedirect: `/login` },
     (err, user, info) => {
       if (err) {
         console.log(err);
         return res.status(500).json({ error: "Internal server error" });
       }
       if (!user) {
-        return res.redirect("/login");
+        return res.redirect(`${process.env.FRONTEND_URL_DEV}/login`);
       }
       req.logIn(user, (err) => {
         if (err) {
           return res.status(500).json({ error: "Internal server error" });
         }
-        if (user.emailSignin === process.env.ADMIN_EMAIL) {
-          return res.redirect("/admin");
+        if (user.email === process.env.ADMIN_EMAIL_BULK_SENDING) {
+          return res.redirect(`${process.env.FRONTEND_URL_DEV}/admin`);
         }
-        return res.redirect("/");
+        return res.redirect(`${process.env.FRONTEND_URL_DEV}/`);
       });
     }
   )(req, res, next);
@@ -169,7 +171,7 @@ exports.logout = (req, res) => {
   req.logout(req.user, (err) => {
     if (err) return next(err);
     res.status(200).json({ message: "Logout successful, redirecting..." });
-    // res.redirect("/");
+    res.redirect(`${process.env.FRONTEND_URL_DEV}/`);
   });
 };
 
@@ -241,3 +243,55 @@ exports.getQuoteList = async (req, res) => {
     res.status(500).json({ error: "Error fetching quotes" });
   }
 };
+
+exports.unsubscribeFromEmailOneClick = async (req, res) => {
+  const token = req.query.token; // Extract token from query parameter
+
+  if (!token) {
+    return res.status(400).json({ message: 'Token is required.' });
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Extract email from the decoded payload
+    const email = decoded.email;
+    
+    const existingSequence = await QuoteSequence.findOne({
+      email,
+    });
+    if (!existingSequence) {
+      return res.status(404).send({ error: "Quote sequence not found" });
+    }
+
+    if (existingSequence.tags.length > 0) {
+      const tagObjects = await Tag.find({
+        _id: { $in: existingSequence.tags },
+      });
+      // Update the tags
+      for (const tagObject of tagObjects) {
+        tagObject.quoteSequenceCount -= 1;
+        await tagObject.save();
+      }
+    }
+
+    const user = await User.findOne({ email: existingSequence.email });
+
+    // Update user sign up for Email status
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    user.isSignedupForEmail = false;
+    await user.save();
+
+    // Delete quote sequence
+    await QuoteSequence.deleteOne({ email });
+
+    res.status(200).json({ message: `Successfully unsubscribed ${email}.` });
+  } catch (err) {
+    console.error('Invalid token:', err);
+    res.status(403).json({ message: 'Invalid or expired token.' });
+  }
+}

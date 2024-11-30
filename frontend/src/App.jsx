@@ -4,7 +4,7 @@ import AppRoutes from './routes/AppRoutes';
 
 function App() {
   const dispatch = useDispatch();
-  const nightMode = useSelector((state) => state.admin.nightMode);
+  const nightMode = useSelector((state) => state.pageSetting.nightMode);
 
   useEffect(() => {
     if (nightMode) {

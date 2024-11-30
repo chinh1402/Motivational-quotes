@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const helmet = require('helmet');
 
 // .env
 require('dotenv').config();
@@ -27,6 +28,7 @@ app.use(cors({
     credentials: true,
   }));
 
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'yourSecretKey', resave: false, saveUninitialized: false }));

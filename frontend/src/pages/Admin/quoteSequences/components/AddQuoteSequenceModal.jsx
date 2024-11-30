@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addQuoteSequence } from "../../../../redux/slices/adminQuoteSlices";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
 import TagsInput from "../../../../components/Custom/TagsInput";
 import CustomSelect from "../../../../components/Custom/CustomSelect";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const typeoptions = ["random", "daily"];
 const AddQuoteModal = ({ isOpen, onClose }) => {
@@ -12,12 +15,29 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
   const [startSendingDay, setStartSendingDay] = useState("");
   const [lastSendingDay, setLastSendingDay] = useState("");
   const [sequenceType, setSequenceType] = useState(typeoptions[0]);
+  const [tagCheckbox, setTagCheckbox] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
 
   const [tags, setTags] = useState("");
   const [errors, setErrors] = useState({});
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -36,10 +56,12 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (validateForm()) {
       try {
+
         const inputData = {
           email,
           sequenceType,
           tags,
+          tagQueryType: tagCheckbox ? "matchAll" : "matchAny",
           timezone,
           sendAt,
           startSendingDay,
@@ -140,7 +162,7 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
               Tags
             </label>
             <TagsInput
-              value={tags ? tags.split(",") : []}
+              value={tags ? tags.split(",").map((tag) => tag.trim()) : []}
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setTags}
               required={errors.tags}
@@ -152,6 +174,17 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
                 {errors.tags}
               </span>
             ) : null}
+          </div>
+
+          <div className="flex">
+            <span className="text-[1.3rem] text-[#000] dark:text-textColor-dark">
+              Match all?
+            </span>
+            <Checkbox
+              className="w-[1.6rem] h-[1.6rem] rounded-[2px] border-[#000] dark:border-textColor-dark ml-[12px]"
+              onCheckedChange={(checked) => setTagCheckbox(checked)}
+              checked={tagCheckbox}
+            />
           </div>
 
           {/* Timezone Input */}
@@ -256,11 +289,7 @@ const AddQuoteModal = ({ isOpen, onClose }) => {
           </button>
 
           {/* Error Handling */}
-          {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string" ? error : JSON.stringify(error)}
-            </p>
-          )}
+          {error && showErrorToast && <ErrorToast message={error.error} />}
         </form>
 
         {/* Close button */}

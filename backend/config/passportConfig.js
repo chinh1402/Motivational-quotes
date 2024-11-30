@@ -59,7 +59,7 @@ passport.use(
 
         // Step 2: If no Google account is found, check if there's an existing user with the same email
         existingUser = await User.findOne({
-          emailSignin: profile.emails[0].value,
+          email: profile.emails[0].value,
         });
 
         if (existingUser) {
@@ -91,7 +91,7 @@ passport.use(
         const newUser = new User({
           googleId: profile.id,
           username: profile.displayName,
-          emailSignin: profile.emails[0].value, 
+          email: profile.emails[0].value, 
           password: process.env.PASSWORD_FOR_GOOGLE_AUTH, 
           avatarURL: profile.photos[0].value,
           timezone: "UTC", // Default timezone
@@ -110,11 +110,13 @@ passport.use(
 
 // Serialization and Deserialization
 passport.serializeUser((user, done) => {
+  // After successfully signed in, save user.id in session
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
+    // Every subsequent request user send in, use user.id in session to check
     const user = await User.findById(id);
     done(null, user);
   } catch (err) {

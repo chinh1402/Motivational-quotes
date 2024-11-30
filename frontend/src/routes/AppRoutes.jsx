@@ -24,8 +24,7 @@ import AdminUsersPage from "../pages/Admin/users/index.jsx";
 import AdminSurveyTicketsPage from "../pages/Admin/surveytickets/index.jsx";
 import AdminTagsPage from "../pages/Admin/tags/index.jsx";
 
-// // Not Found Page
-// import NotFoundPage from "../pages/NotFound";
+import NotFoundPage from "../pages/NotFound";
 
 const AppRoutes = () => {
   return (
@@ -34,7 +33,8 @@ const AppRoutes = () => {
         {/* Unauthenticated Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        
+        {/* <Route path="/signup" element={<SignupPage />} /> */}
+        {/* <Route path="/get-random-quote" element={<RandomQuotePage />} /> */}
         {/* Admin Routes */}
         <Route
           path="/admin"
@@ -84,6 +84,8 @@ const AppRoutes = () => {
             </ProtectedRouteAdmin>
           }
         />
+        {/* Handle 404 */}
+        <Route path="*" element={<NotFoundPage />} />
 
       </Routes>
     </Router>

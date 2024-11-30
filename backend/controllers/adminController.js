@@ -16,6 +16,7 @@ exports.getQuotes = async (req, res) => {
     author,
     quoteNumberId,
     tags,
+    tagQueryType,
   } = req.query;
   try {
     // Construct the search query
@@ -27,17 +28,20 @@ exports.getQuotes = async (req, res) => {
       searchQuery.author = { $regex: author, $options: "i" }; // Case-insensitive search
     }
     if (quoteNumberId) {
-      searchQuery.quoteNumberId = quoteNumberId; // Exact match for quoteNumberId
+      searchQuery.quoteNumberId = { $regex: quoteNumberId, $options: "i" }; // Exact match for quoteNumberId
     }
     // tags is string
     if (tags) {
       const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
       const tagObjects = await Tag.find({ name: { $in: tagsArray } });
-      searchQuery.tags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
+      const tagIds = tagObjects.map((tag) => tag._id);
+      searchQuery.tags =
+        tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds };
     }
 
     // Fetch quotes with pagination and search
     const quotes = await Quote.find(searchQuery)
+      .sort({ quoteNumberId: 1 })
       .skip((page - 1) * limit) // Skip items for the current page
       .limit(limit); // Limit the number of items per page
 
@@ -147,7 +151,7 @@ exports.createQuote = async (req, res) => {
 };
 
 exports.updateQuote = async (req, res) => {
-  const { quoteNumberId, author, content, tags, override = "false" } = req.body;
+  const { quoteNumberId, author, content, tags, override = false } = req.body;
 
   // Validate required fields
   if (!quoteNumberId) {
@@ -192,9 +196,7 @@ exports.updateQuote = async (req, res) => {
         }
       }
 
-      // similarQuote = true, override = true, send res
-
-      if (similarQuote && override === "false") {
+      if (similarQuote && override === false) {
         return res
           .status(400)
           .json({ error: "A similar quote already exists", similarQuote });
@@ -323,6 +325,8 @@ exports.getQuoteSequences = async (req, res) => {
     email,
     sequenceType,
     tags,
+    tagQueryType,
+    tagQueryTypeOnly,
     timezone,
     sendAt,
     startSendingDay,
@@ -345,10 +349,15 @@ exports.getQuoteSequences = async (req, res) => {
   if (tags) {
     const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
     const tagObjects = await Tag.find({ name: { $in: tagsArray } });
-    searchQuery.tags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
+    const tagIds = tagObjects.map((tag) => tag._id);
+    searchQuery.tags =
+      tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds };
   }
 
-  // Exact match for timezone
+  if (tagQueryTypeOnly) {
+    searchQuery.tagQueryType = { $regex: tagQueryTypeOnly, $options: "i" };
+  }
+
   if (timezone) {
     searchQuery.timezone = { $regex: timezone, $options: "i" };
   }
@@ -374,10 +383,12 @@ exports.getQuoteSequences = async (req, res) => {
     const total = await QuoteSequence.countDocuments(searchQuery);
 
     res.json({
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / limit),
+      pagination: {
+        totalQuoteSequences: total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        perPage: limit,
+      },
       quoteSequences,
     });
   } catch (error) {
@@ -390,6 +401,7 @@ exports.createQuoteSequence = async (req, res) => {
     email,
     sequenceType,
     tags,
+    tagQueryType,
     timezone,
     startSendingDay,
     lastSendingDay,
@@ -441,7 +453,7 @@ exports.createQuoteSequence = async (req, res) => {
     if (sequenceType === "daily") {
       // Fetch the Admin's daily sequence
       const dailySequence = await QuoteSequence.findOne({
-        email: process.env.ADMIN_EMAIL,
+        email: process.env.ADMIN_EMAIL_BULK_SENDING,
       });
       if (!dailySequence) {
         return res.status(404).send({
@@ -456,6 +468,7 @@ exports.createQuoteSequence = async (req, res) => {
         quoteSequence: dailySequence.quoteSequence,
         sequenceType: "daily",
         tags: dailySequence.tags,
+        tagQueryType: dailySequence.tagQueryType,
         tagNames: dailySequence.tagNames,
         currentDay: dailySequence.currentDay,
         startSendingDay: new Date(startSendingDay),
@@ -465,6 +478,7 @@ exports.createQuoteSequence = async (req, res) => {
         createdBy: req.user._id,
         updatedBy: req.user._id,
         userConsent: true,
+        mailServiceRunning: true,
       });
       await quoteSequence.save();
 
@@ -491,13 +505,13 @@ exports.createQuoteSequence = async (req, res) => {
 
       // Fetch possible quote IDs based on tags
       let possibleQuotesNumberId = await Quote.distinct("quoteNumberId", {
-        tags: { $in: tagIds },
+        tags: tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds },
         toolongforwebUI: false,
       });
 
       // If no quotes are found, get all quote IDs
       if (possibleQuotesNumberId.length === 0) {
-        possibleQuotesNumberId = await Quote.distinct("quoteNumberId");
+        return res.status(400).send({ error: "No quote found for that tag and tag type" });
       }
 
       // Generate a shuffled quote sequence
@@ -512,6 +526,7 @@ exports.createQuoteSequence = async (req, res) => {
         sequenceType,
         tags: tagIds,
         tagNames: tags,
+        tagQueryType,
         timezone,
         startSendingDay: new Date(startSendingDay),
         lastSendingDay: new Date(lastSendingDay),
@@ -519,6 +534,7 @@ exports.createQuoteSequence = async (req, res) => {
         createdBy: req.user._id,
         updatedBy: req.user._id,
         userConsent: true,
+        mailServiceRunning: true,
       });
       await quoteSequence.save();
     }
@@ -566,40 +582,58 @@ exports.updateQuoteSequence = async (req, res) => {
       .send({ error: "All required fields must be provided" });
   }
 
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+    });
+  }
+
   try {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).send({ error: "User not found" });
+      return res.status(404).send({ error: "User for this email not found" });
     }
 
-    if (user.email === process.env.ADMIN_EMAIL) {
+    if (user.email === process.env.ADMIN_EMAIL_BULK_SENDING) {
+      return res.status(400).send({
+        error: "This sequence can't be updated",
+      });
+    }
+
+    const existingSequence = await QuoteSequence.findOne({
+      _id: { $ne: _id },
+      email: user.email,
+    });
+
+    if (existingSequence) {
       return res.status(400).send({
         error:
-          "This sequence can't be updated",
-      })
-    }  
-    // Find the existing quote sequence
-    const existingSequence = await QuoteSequence.findOne({ _id });
+          "User already signed up for email service, cancel current service first.",
+      });
+    }
 
-    if (!existingSequence) {
+    const currentSequence = await QuoteSequence.findOne({ _id });
+
+    if (!currentSequence) {
       return res.status(404).send({ error: "Quote sequence not found" });
     }
 
-    // Update the existing quote sequence details
-    existingSequence.timezone = timezone;
-    existingSequence.lastSendingDay = new Date(lastSendingDay);
-    existingSequence.sendAt = sendAt;
-    existingSequence.mailServiceRunning = mailServiceRunning || false;
-    existingSequence.updatedBy = req.user._id;
+    currentSequence.email = email;
+    currentSequence.timezone = timezone;
+    currentSequence.lastSendingDay = new Date(lastSendingDay);
+    currentSequence.sendAt = sendAt;
+    currentSequence.mailServiceRunning = mailServiceRunning || false;
+    currentSequence.updatedBy = req.user._id;
 
-    await existingSequence.save();
+    await currentSequence.save();
 
     // Send confirmation response
     console.log("Updated the quote sequence for", user.email);
     res.status(200).send({
       message: "Quote sequence updated successfully",
-      updatedQuoteSequence: existingSequence,
+      updatedQuoteSequence: currentSequence,
     });
   } catch (error) {
     console.error("Error updating quote sequence:", error);
@@ -615,22 +649,19 @@ exports.deleteQuoteSequence = async (req, res) => {
     return res.status(400).send({ error: "_id is required" });
   }
 
-  
-
   try {
     // Check if quote sequence exists
     const existingSequence = await QuoteSequence.findOne({ _id });
-    
+
     if (!existingSequence) {
       return res.status(404).send({ error: "Quote sequence not found" });
     }
 
-    if (existingSequence.email === process.env.ADMIN_EMAIL) {
+    if (existingSequence.email === process.env.ADMIN_EMAIL_BULK_SENDING) {
       return res.status(400).send({
-        error:
-          "This sequence can't be deleted",
-      })
-    } 
+        error: "This sequence can't be deleted",
+      });
+    }
 
     if (existingSequence.tags.length > 0) {
       const tagObjects = await Tag.find({
@@ -760,6 +791,13 @@ exports.createUser = async (req, res) => {
     return res.status(400).json({ error: responseErrorMessage });
   }
 
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+    });
+  }
+
   try {
     // Check if a user with the provided email already exists
     const existingUser = await User.findOne({
@@ -825,8 +863,15 @@ exports.updateUsers = async (req, res) => {
   }
 
   const adminAcc = await User.findOne({ _id });
-  if (adminAcc.email === process.env.ADMIN_EMAIL) {
+  if (adminAcc.email === process.env.ADMIN_EMAIL_BULK_SENDING) {
     return res.status(400).json({ error: "This account cant be updated" });
+  }
+
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+    });
   }
 
   try {
@@ -872,7 +917,8 @@ exports.updateUsers = async (req, res) => {
     if (birthDate) {
       updateFields.birthDate = new Date(birthDate);
     }
-
+    updateFields.createdBy = req.user._id;
+    updateFields.updatedBy = req.user._id;
     // Check if there are any fields to update
     if (Object.keys(updateFields).length === 0) {
       return res.status(400).json({ error: "No fields provided for update" });
@@ -905,7 +951,6 @@ exports.deleteUser = async (req, res) => {
       return res.status(400).json({ error: "Id is required" });
     }
 
-    //@ts-check
     if (!req.user) {
       return res.status(401).json({
         error:
@@ -917,7 +962,7 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.email === process.env.ADMIN_EMAIL) {
+    if (user.email === process.env.ADMIN_EMAIL_BULK_SENDING) {
       return res.status(400).json({ error: "This account cant be deleted" });
     }
 
@@ -958,6 +1003,7 @@ exports.getTags = async (req, res) => {
     name,
     description,
     relatedTags,
+    tagQueryType,
     color,
     icon,
   } = req.query;
@@ -974,7 +1020,9 @@ exports.getTags = async (req, res) => {
     if (relatedTags) {
       const tagsArray = relatedTags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
       const tagObjects = await Tag.find({ name: { $in: tagsArray } });
-      searchQuery.relatedTags = { $in: tagObjects }; // Match documents where tags contain all of the specified tags
+      const tagIds = tagObjects.map((tag) => tag._id);
+      searchQuery.relatedTags =
+        tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds };
     }
     if (color) {
       searchQuery.color = { $regex: color, $options: "i" };
@@ -1066,6 +1114,13 @@ exports.updateTag = async (req, res) => {
     return res.status(400).json({ error: "_id is required" });
   }
 
+  if (!req.user) {
+    return res.status(401).json({
+      error:
+        "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+    });
+  }
+
   try {
     const tag = await Tag.findOne({ _id });
     if (!tag) {
@@ -1103,12 +1158,6 @@ exports.updateTag = async (req, res) => {
     if (icon !== undefined) {
       tag.icon = icon;
     }
-    if (!req.user) {
-      return res.status(401).json({
-        error:
-          "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
-      });
-    }
 
     tag.updatedAt = Date.now(); // Update dateModified to current date
     tag.updatedBy = req.user._id;
@@ -1145,5 +1194,119 @@ exports.deleteTag = async (req, res) => {
     // Handle errors
     console.log(error);
     res.status(500).json({ error: "Error deleting Tag" });
+  }
+};
+
+exports.getUserfavorites = async (req, res) => {
+  const {
+    page = 1,
+    limit = 20,
+    user_id,
+    content,
+    author,
+    quoteNumberId,
+    tags,
+    tagQueryType,
+  } = req.query;
+
+  try {
+    const user = await User.findOne({ _id: user_id });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const quoteNumberIds = user.favoriteQuotes;
+    const searchQuery = {};
+    if (content) {
+      searchQuery.content = { $regex: content, $options: "i" }; // Case-insensitive search
+    }
+    if (author) {
+      searchQuery.author = { $regex: author, $options: "i" }; // Case-insensitive search
+    }
+    if (quoteNumberId) {
+      const filteredIds = quoteNumberIds.filter((id) =>
+        id.toString().match(new RegExp(quoteNumberId, "i"))
+      );
+      
+      searchQuery.quoteNumberId = { $in: filteredIds };
+    } else {
+      searchQuery.quoteNumberId = { $in: quoteNumberIds };
+    }
+    // tags is string
+    if (tags) {
+      const tagsArray = tags.split(",").map((tag) => tag.trim()); // Split the string by commas and trim whitespace
+      const tagObjects = await Tag.find({ name: { $in: tagsArray } });
+      const tagIds = tagObjects.map((tag) => tag._id);
+      searchQuery.tags =
+        tagQueryType === "matchAny" ? { $in: tagIds } : { $all: tagIds };
+    }
+
+    const quotes = await Quote.find({ ...searchQuery })
+      .sort({ quoteNumberId: 1 })
+      .skip((page - 1) * limit) // Skip items for the current page
+      .limit(limit); // Limit the number of items per page
+
+    const totalQuotes = await Quote.countDocuments({
+      ...searchQuery,
+    });
+
+    const totalPages = Math.ceil(totalQuotes / limit);
+
+    res.json({
+      userFavorites: quotes,
+      pagination: {
+        totalQuotes,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.deletefavorite = async (req, res) => {
+  const { quoteNumberId, user_id } = req.body;
+  try {
+    const user = await User.findOne({ _id: user_id });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const quote = await Quote.findOne({ quoteNumberId });
+    if (!quote) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+
+    const parsedQuoteNumberId = Number(quoteNumberId);
+
+    user.favoriteQuotes = user.favoriteQuotes.filter(
+      (quoteId) => quoteId !== parsedQuoteNumberId
+    );
+
+    if (!req.user) {
+      return res.status(401).json({
+        error:
+          "Unauthorized, If you read this, you're probably using postman. Ask administrator for an account",
+      });
+    }
+
+    quote.updatedAt = Date.now(); // Update dateModified to current date
+    quote.updatedBy = req.user._id;
+
+    quote.favorites -= 1;
+
+    await user.save();
+    await quote.save();
+
+    res.status(200).json({
+      message: "Quote deleted successfully",
+      favoriteQuotes: user.favoriteQuotes,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

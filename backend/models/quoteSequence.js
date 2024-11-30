@@ -19,6 +19,11 @@ const quoteSequenceSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  tagQueryType: {
+    type: String,
+    required: true,
+    default: "matchAny", // The value is either "matchAny" / "matchAll"
+  },
   timezone: {
     type: String,
     required: true,

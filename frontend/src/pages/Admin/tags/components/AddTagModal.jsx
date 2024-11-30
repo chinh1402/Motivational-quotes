@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addTag } from "../../../../redux/slices/adminQuoteSlices";
+import { resetError } from "../../../../redux/slices/adminQuoteSlices";
+import ErrorToast from "../../../../components/Custom/Toasts/ErrorToast";
 import TagsInput from "../../../../components/Custom/TagsInput";
 
 // name, description, relatedTags, color, icon; name is required
@@ -12,9 +14,28 @@ const AddUsersModal = ({ isOpen, onClose }) => {
   const [icon, setIcon] = useState("");
 
   const [errors, setErrors] = useState({});
+  const [showErrorToast, setShowErrorToast] = useState(false);
+
 
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.admin);
+
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorToast(true);
+
+      // Automatically hide the toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+        dispatch(resetError()); // Reset the success state after showing the toast
+      }, 3000);
+
+      // Cleanup timer
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -130,6 +151,7 @@ const AddUsersModal = ({ isOpen, onClose }) => {
               Related Tags
             </label>
             <TagsInput
+              value={relatedTags ? relatedTags.split(",").map(tag => tag.trim()) : []}
               className={`border-[#f5f3f1] focus:outline-[#f5f3f1] `}
               onChange={setRelatedTags}
               onFocusErrorRemove={() => handleFocus("relatedTags")}
@@ -214,9 +236,7 @@ const AddUsersModal = ({ isOpen, onClose }) => {
 
           {/* Error Handling */}
           {error && (
-            <p className="text-red-900 text-[13px] mt-2 break-words dark:text-primary-dark">
-              {typeof error === "string" ? error : JSON.stringify(error)}
-            </p>
+            showErrorToast && <ErrorToast message={error.error} />
           )}
         </form>
 

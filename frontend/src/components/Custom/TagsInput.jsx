@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import TagItem from "./Tags/TagItem";
 import { authenticatedAPI } from "../../services/apiServices";
 
-function TagsInput({ className, value = "", onChange, required, onFocusErrorRemove, readOnly }) {
+function TagsInput({ className, value = [], onChange, required, onFocusErrorRemove, readOnly }) {
   const firstInputRef = useRef(null);
   const secondInputRef = useRef(null); // Ref for the second input
   const [maxWidth, setMaxWidth] = useState("400px"); // Initial max-width
-  const [tags, setTags] = useState(value || []); // List of selected tags
-  const [inputValue, setInputValue] = useState(""); // Input value for filtering available tags
-  const [availableTags, setAvailableTags] = useState([]); // Available tags from API
+  const [inputValue, setInputValue] = useState(""); // Input value for filtering available value
+  const [availableTags, setAvailableTags] = useState([]); // Available value from API
   const [filteredTags, setFilteredTags] = useState([]); // Filtered tag suggestions based on user input
   const [isFocused, setIsFocused] = useState(false); // Track focus state
 
@@ -20,45 +19,44 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
     }
   }, []);
 
-  // Fetch the available tags from the API when the component mounts
+  // Fetch the available value from the API when the component mounts
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const response = await authenticatedAPI.getAllTagNames();
         setAvailableTags(response.data); // Assuming response.data contains an array of tag names
       } catch (error) {
-        console.error("Error fetching tags:", error);
+        console.error("Error fetching value:", error);
       }
     };
 
     fetchTags();
   }, []);
 
-  // Filter tags based on user input or show all if input is empty and focused
+  // Filter value based on user input or show all if input is empty and focused
   useEffect(() => {
     if (inputValue) {
-      // Filter tags when user types in the input, excluding already selected tags
+      // Filter value when user types in the input, excluding already selected value
       setFilteredTags(
         availableTags
           .filter(
             (tag) => tag.toLowerCase().includes(inputValue.toLowerCase()) // Case-insensitive filtering
           )
-          .filter((tag) => !tags.includes(tag)) // Exclude selected tags
+          .filter((tag) => !value.includes(tag)) // Exclude selected value
       );
     } else if (isFocused) {
-      // Show all available tags when input is focused and empty, excluding selected tags
-      setFilteredTags(availableTags.filter((tag) => !tags.includes(tag)));
+      // Show all available value when input is focused and empty, excluding selected value
+      setFilteredTags(availableTags.filter((tag) => !value.includes(tag)));
     } else {
-      setFilteredTags([]); // Clear filtered tags if input is not focused or empty
+      setFilteredTags([]); // Clear filtered value if input is not focused or empty
     }
-  }, [inputValue, availableTags, tags, isFocused]);
+  }, [inputValue, availableTags, JSON.stringify(value), isFocused]);
 
   // Handle selecting a tag
   const handleSelectTag = (tag) => {
-    if (!readOnly && !tags.includes(tag)) {
-      const newTags = [...tags, tag]; // Add the new tag
-      setTags(newTags); // Update the tag state
-      onChange(newTags.join(", ")); // Notify parent, join tags with a comma and space
+    if (!readOnly && !value.includes(tag)) {
+      const newTags = [...value, tag]; // Add the new tag
+      onChange(newTags.join(", ")); // Notify parent, join value with a comma and space
     }
     setInputValue(""); // Clear the input field
     setFilteredTags([]); // Clear the filtered suggestions
@@ -67,9 +65,8 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
   // Handle removing a tag
   const handleRemoveTag = (tagToRemove) => {
     if (!readOnly) {
-      const newTags = tags.filter((tag) => tag !== tagToRemove); // Remove the selected tag
-      setTags(newTags); // Update the tag state
-      onChange(newTags.join(", ")); // Notify parent, join remaining tags with a comma and space
+      const newTags = value.filter((tag) => tag !== tagToRemove); // Remove the selected tag
+      onChange(newTags.join(", ")); // Notify parent, join remaining value with a comma and space
     }
   };
 
@@ -78,7 +75,7 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
     if (!readOnly) {
       setIsFocused(true); // Set focus state to true when input is focused
       if (!inputValue) {
-        setFilteredTags(availableTags); // Show all tags if input is empty
+        setFilteredTags(availableTags); // Show all value if input is empty
       }
       if (onFocusErrorRemove) {
         onFocusErrorRemove(); // Trigger error removal on focus
@@ -93,10 +90,6 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
     }
   };
 
-  useEffect(() => {
-      setTags(value);
-  }, [value]);
-
   return (
     <div className={`relative flex flex-nowrap items-center  ${className} ${readOnly ? "opacity-[70%] cursor-default" : ""}`}>
       {/* Render each selected tag using TagItem */}
@@ -104,7 +97,7 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
         className={`z-10 flex flex-nowrap overflow-scroll scrollbar-hide`}
         style={{ maxWidth: maxWidth }}
       >
-        {Array.isArray(tags) && tags.length > 0 && tags.map((tag, index) => (
+        {Array.isArray(value) && value.length > 0 && value.map((tag, index) => (
           <TagItem
             key={index}
             tag={tag}
@@ -113,7 +106,7 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
           />
         ))}
 
-        {/* Input for typing and searching tags */}
+        {/* Input for typing and searching value */}
           <input
             ref={firstInputRef}
             type="text"
@@ -122,7 +115,7 @@ function TagsInput({ className, value = "", onChange, required, onFocusErrorRemo
               ${readOnly ? "pointer-events-none" : ""}`}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onFocus={handleFocus} // Show all tags when input is focused
+            onFocus={handleFocus} // Show all value when input is focused
             onBlur={handleBlur} // Hide dropdown on blur
           />
       </div>

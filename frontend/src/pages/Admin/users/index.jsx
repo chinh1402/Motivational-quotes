@@ -97,6 +97,7 @@ function User() {
       case "Tags":
         return (
           <TagsInput
+            value={inputValue ? inputValue.split(",").map(tag => tag.trim()) : []}
             onChange={setInputValue}
             className={"flex-grow"}
           />

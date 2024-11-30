@@ -21,8 +21,8 @@ function SuccessToast({ message }) {
       <div
         className={`${
           isVisible
-            ? 'translate-y-0 opacity-100'  // Visible: slide down and fully visible
-            : '-translate-y-10 opacity-0'  // Hidden: slide up and invisible
+            ? "translate-y-0 opacity-100" // Visible: slide down and fully visible
+            : "-translate-y-10 opacity-0" // Hidden: slide up and invisible
         } transition-all duration-500 ease-in-out bg-green-400 flex items-center rounded-[12px] text-[#fff] p-[16px] min-w-[max-content] fixed top-10 left-1/2 transform -translate-x-1/2 z-50`}
       >
         <icon>
